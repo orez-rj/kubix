@@ -1,4 +1,4 @@
-use crate::utils;
+use std::process::Command;
 
 /// Build kubectl command args with optional context and namespace
 pub fn build_args(
@@ -21,6 +21,32 @@ pub fn build_args(
     args
 }
 
+/// Execute a kubectl command and return the output
+pub fn execute_kubectl(args: &[&str]) -> Result<String, String> {
+    let output = Command::new("kubectl")
+        .args(args)
+        .output()
+        .map_err(|e| format!("Failed to execute kubectl: {}", e))?;
+
+    if output.status.success() {
+        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+    } else {
+        Err(String::from_utf8_lossy(&output.stderr).to_string())
+    }
+}
+
+/// Execute a kubectl command with interactive mode (for bash, etc.)
+pub fn execute_kubectl_interactive(args: &[&str]) -> bool {
+    let status = Command::new("kubectl")
+        .args(args)
+        .status();
+
+    match status {
+        Ok(exit_status) => exit_status.success(),
+        Err(_) => false,
+    }
+}
+
 /// Execute a kubectl command with context and namespace support
 pub fn execute_with_context(
     base_args: &[&str],
@@ -29,7 +55,7 @@ pub fn execute_with_context(
 ) -> Result<String, String> {
     let args = build_args(base_args, context, namespace);
     let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    utils::execute_kubectl(&args_refs)
+    execute_kubectl(&args_refs)
 }
 
 /// Execute an interactive kubectl command with context and namespace support
@@ -40,5 +66,21 @@ pub fn execute_interactive_with_context(
 ) -> bool {
     let args = build_args(base_args, context, namespace);
     let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    utils::execute_kubectl_interactive(&args_refs)
+    execute_kubectl_interactive(&args_refs)
+}
+
+/// Get the current kubectl context
+pub fn get_current_context() -> Result<String, String> {
+    execute_kubectl(&["config", "current-context"])
+        .map(|output| output.trim().to_string())
+}
+
+/// Get all available kubectl contexts
+pub fn get_contexts() -> Result<String, String> {
+    execute_kubectl(&["config", "get-contexts", "-o", "name"])
+}
+
+/// Switch to a specific kubectl context
+pub fn switch_context(context_name: &str) -> Result<String, String> {
+    execute_kubectl(&["config", "use-context", context_name])
 } 

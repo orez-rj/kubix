@@ -1,4 +1,4 @@
-use crate::{kubectl, pods, utils, config};
+use crate::{kubectl, pods, display, config};
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -31,23 +31,26 @@ pub fn handle_exec_command(
         }
         (Some(_), Some(_)) => {
             // This should be prevented by clap's argument group, but handle it gracefully
-            utils::print_error_and_exit("Cannot specify both command and script. Use either --command or --script, not both.");
+            display::print_error_styled("Cannot specify both command and script. Use either --command or --script, not both.");
+            std::process::exit(1);
         }
     }
 }
 
 /// Open a bash shell session to a pod
 pub fn bash_to_pod(pod_pattern: &str, context: Option<&str>, namespace: Option<&str>) {
-    if let Some(pod_name) = pods::find_pod(pod_pattern, context, namespace) {
-        println!("🔗 Opening bash session to pod: {}", pod_name);
+    if let Some(pod_name) = pods::select_pod(pod_pattern, context, namespace) {
+        display::print_working_styled(&format!("Opening bash session to pod: {}", pod_name));
         
         let base_args = vec!["exec", "-it", &pod_name, "--", "bash"];
         
         if !kubectl::execute_interactive_with_context(&base_args, context, namespace) {
-            utils::print_error_and_exit("Failed to open bash session");
+            display::print_error_styled("Failed to open bash session");
+            std::process::exit(1);
         }
     } else {
-        utils::print_error_and_exit(&format!("No pod found matching pattern: {}", pod_pattern));
+        display::print_error_styled(&format!("No pod found matching pattern: {}", pod_pattern));
+        std::process::exit(1);
     }
 }
 
@@ -58,16 +61,18 @@ pub fn run_command_on_pod(
     context: Option<&str>, 
     namespace: Option<&str>
 ) {
-    if let Some(pod_name) = pods::find_pod(pod_pattern, context, namespace) {
-        utils::print_working(&format!("Running command '{}' on pod: {}", command, pod_name));
+    if let Some(pod_name) = pods::select_pod(pod_pattern, context, namespace) {
+        display::print_working_styled(&format!("Running command '{}' on pod: {}", command, pod_name));
         
         let base_args = vec!["exec", "-it", &pod_name, "--", "sh", "-c", command];
         
         if !kubectl::execute_interactive_with_context(&base_args, context, namespace) {
-            utils::print_error_and_exit("Failed to run command");
+            display::print_error_styled("Failed to run command");
+            std::process::exit(1);
         }
     } else {
-        utils::print_error_and_exit(&format!("No pod found matching pattern: {}", pod_pattern));
+        display::print_error_styled(&format!("No pod found matching pattern: {}", pod_pattern));
+        std::process::exit(1);
     }
 }
 
@@ -78,14 +83,14 @@ pub fn exec_script_on_pod(
     context: Option<&str>, 
     namespace: Option<&str>
 ) {
-    if let Some(pod_name) = pods::find_pod(pod_pattern, context, namespace) {
-        println!("📝 Executing script '{}' on pod: {}", script_path, pod_name);
+    if let Some(pod_name) = pods::select_pod(pod_pattern, context, namespace) {
+        display::print_working_styled(&format!("Executing script '{}' on pod: {}", script_path, pod_name));
         
         // Read the script content
         let script_content = fs::read_to_string(script_path)
             .unwrap_or_else(|_| {
-                utils::print_error_and_exit(&format!("Failed to read script file: {}", script_path));
-                unreachable!()
+                display::print_error_styled(&format!("Failed to read script file: {}", script_path));
+                std::process::exit(1);
             });
         
         // Build kubectl command
@@ -114,19 +119,21 @@ pub fn exec_script_on_pod(
             .expect("Failed to wait for kubectl process");
         
         if !status.success() {
-            utils::print_error_and_exit("Failed to execute script");
+            display::print_error_styled("Failed to execute script");
+            std::process::exit(1);
         } else {
-            utils::print_success("Script executed successfully");
+            display::print_success_styled("Script executed successfully");
         }
     } else {
-        utils::print_error_and_exit(&format!("No pod found matching pattern: {}", pod_pattern));
+        display::print_error_styled(&format!("No pod found matching pattern: {}", pod_pattern));
+        std::process::exit(1);
     }
 }
 
 /// Open a shell session to a pod (try bash first, then sh)
 pub fn shell_to_pod(pod_pattern: &str, context: Option<&str>, namespace: Option<&str>) {
-    if let Some(pod_name) = pods::find_pod(pod_pattern, context, namespace) {
-        println!("🔗 Opening shell session to pod: {}", pod_name);
+    if let Some(pod_name) = pods::select_pod(pod_pattern, context, namespace) {
+        display::print_working_styled(&format!("Opening shell session to pod: {}", pod_name));
         
         // Try bash first
         let bash_args = vec!["exec", "-it", &pod_name, "--", "/bin/bash"];
@@ -135,12 +142,14 @@ pub fn shell_to_pod(pod_pattern: &str, context: Option<&str>, namespace: Option<
         }
         
         // Fallback to sh
-        utils::print_info("Bash not available, trying sh...");
+        display::print_info_styled("Bash not available, trying sh...");
         let sh_args = vec!["exec", "-it", &pod_name, "--", "/bin/sh"];
         if !kubectl::execute_interactive_with_context(&sh_args, context, namespace) {
-            utils::print_error_and_exit("Failed to open shell session");
+            display::print_error_styled("Failed to open shell session");
+            std::process::exit(1);
         }
     } else {
-        utils::print_error_and_exit(&format!("No pod found matching pattern: {}", pod_pattern));
+        display::print_error_styled(&format!("No pod found matching pattern: {}", pod_pattern));
+        std::process::exit(1);
     }
 } 

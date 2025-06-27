@@ -7,11 +7,18 @@ mod pods;
 mod exec;
 mod smart;
 mod config;
+mod display;
 
 use clap::Parser;
 use cli::{Cli, Commands};
 
 fn main() {
+    // Setup signal handling for graceful cancellation
+    ctrlc::set_handler(move || {
+        eprintln!("\nOperation cancelled by user");
+        std::process::exit(130); // Standard exit code for SIGINT
+    }).expect("Error setting Ctrl+C handler");
+
     let cli: Cli = Cli::parse();
     handle_command(&cli.command);
 }
@@ -44,6 +51,9 @@ fn handle_command(command: &Commands) {
         }
         Commands::Smart { command } => {
             smart::process_smart_command(command);
+        }
+        Commands::Config { command } => {
+            config::handle_config_command(command.as_ref());
         }
     }
 }

@@ -1,5 +1,4 @@
-use crate::utils;
-use std::io::{self, Write};
+use crate::{utils, kubectl};
 
 /// Resolve a namespace pattern to an exact namespace name
 /// Returns None if user cancels, exits process if no matches found
@@ -9,36 +8,16 @@ pub fn resolve_namespace_pattern(pattern: &str, context: Option<&str>) -> Option
         Ok(namespaces) => namespaces,
         Err(error) => {
             utils::print_error_and_exit(&format!("Error getting namespaces: {}", error));
-            return None;
         }
     };
     
     // Find matching namespaces
-    let matches: Vec<&String> = namespaces
-        .iter()
+    let matches: Vec<String> = namespaces
+        .into_iter()
         .filter(|namespace| namespace.contains(pattern))
         .collect();
     
-    match matches.len() {
-        0 => {
-            utils::print_error_and_exit(&format!("No namespaces found matching pattern: '{}'", pattern));
-            None
-        }
-        1 => {
-            // Single match - return it
-            Some(matches[0].clone())
-        }
-        _ => {
-            // Multiple matches - let user choose
-            println!("🔍 Found {} namespaces matching '{}':", matches.len(), pattern);
-            for (i, namespace) in matches.iter().enumerate() {
-                println!("  {}. {}", i + 1, namespace);
-            }
-            
-            let choice = prompt_user_choice(matches.len());
-            choice.map(|index| matches[index].clone())
-        }
-    }
+    utils::select_from_matches(matches, pattern, "namespace")
 }
 
 /// Get all available namespaces as a vector
@@ -51,7 +30,7 @@ fn get_all_namespaces(context: Option<&str>) -> Result<Vec<String>, String> {
     }
     cmd_args.extend(&args);
     
-    match utils::execute_kubectl(&cmd_args) {
+    match kubectl::execute_kubectl(&cmd_args) {
         Ok(output) => {
             let namespaces: Vec<String> = output
                 .lines()
@@ -61,34 +40,5 @@ fn get_all_namespaces(context: Option<&str>) -> Result<Vec<String>, String> {
             Ok(namespaces)
         }
         Err(error) => Err(error),
-    }
-}
-
-/// Prompt user to choose from multiple options
-fn prompt_user_choice(max_options: usize) -> Option<usize> {
-    print!("\nSelect namespace (1-{}, or 'q' to quit): ", max_options);
-    io::stdout().flush().unwrap();
-    
-    let mut input = String::new();
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {
-            let input = input.trim();
-            
-            if input.eq_ignore_ascii_case("q") || input.eq_ignore_ascii_case("quit") {
-                return None;
-            }
-            
-            match input.parse::<usize>() {
-                Ok(num) if num >= 1 && num <= max_options => Some(num - 1),
-                _ => {
-                    println!("❌ Invalid selection. Please enter a number between 1 and {} or 'q' to quit.", max_options);
-                    prompt_user_choice(max_options) // Recursive call for retry
-                }
-            }
-        }
-        Err(_) => {
-            println!("❌ Failed to read input.");
-            None
-        }
     }
 } 

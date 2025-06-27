@@ -2,10 +2,49 @@ use clap::{Parser, Subcommand, ArgGroup};
 
 #[derive(Parser)]
 #[command(name = "kubix")]
+#[command(version)]
 #[command(about = "Smart CLI wrapper for kubectl", long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
+}
+
+#[derive(Subcommand)]
+pub enum ConfigCommands {
+    /// Add a command nickname
+    #[command(name = "add-command")]
+    AddCommand {
+        /// Nickname for the command
+        nickname: String,
+        /// The actual command to execute
+        command: String,
+    },
+    
+    /// Add a script nickname
+    #[command(name = "add-script")]
+    AddScript {
+        /// Nickname for the script
+        nickname: String,
+        /// Path to the script file
+        script: String,
+    },
+    
+    /// Remove a command nickname
+    #[command(name = "remove-command")]
+    RemoveCommand {
+        /// Nickname of the command to remove
+        nickname: String,
+    },
+    
+    /// Remove a script nickname
+    #[command(name = "remove-script")]
+    RemoveScript {
+        /// Nickname of the script to remove
+        nickname: String,
+    },
+    
+    /// List current configuration (default action)
+    List,
 }
 
 #[derive(Subcommand)]
@@ -69,5 +108,11 @@ pub enum Commands {
     Smart {
         /// Natural language command description
         command: String,
+    },
+    
+    /// Manage kubix configuration
+    Config {
+        #[command(subcommand)]
+        command: Option<ConfigCommands>,
     },
 }
