@@ -109,7 +109,7 @@ pub fn show_config() {
         display::print_info("No custom commands or scripts configured.");
     }
     println!();
-    display::print_info("Add or remove configurations using the subcommands:");
+    display::print_info("Add or remove configurations using the subcommands or edit the config file directly:");
     println!("  • kubix config add-command <nickname> <command>");
     println!("  • kubix config add-script <nickname> <script>");
     println!("  • kubix config remove-command <nickname>");

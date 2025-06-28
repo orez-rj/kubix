@@ -1,5 +1,5 @@
 use tabled::{Table, Tabled, settings::{
-    Style, object::{Rows, Columns}, Color
+    Style, object::{Rows, Columns, Cell}, Color
 }};
 use owo_colors::OwoColorize;
 use std::fmt::Display;
@@ -66,22 +66,13 @@ fn style_table(table: &mut Table) {
 }
 
 /// Apply color to status-based content
-fn colorize_status(status: &str) -> String {
+fn colorize_status(status: &str) -> Color {
     match status.to_lowercase().as_str() {
-        "running" => status.green().bold().to_string(),
-        "pending" => status.yellow().bold().to_string(),
-        "failed" | "error" | "crashloopbackoff" => status.red().bold().to_string(),
-        "succeeded" | "completed" => status.blue().bold().to_string(),
-        _ => status.to_string(),
-    }
-}
-
-/// Apply color to current marker
-fn colorize_current_marker(marker: &str) -> String {
-    if marker == "✓" {
-        marker.green().bold().to_string()
-    } else {
-        marker.to_string()
+        "running" => Color::FG_GREEN,
+        "pending" => Color::FG_YELLOW,
+        "failed" | "error" | "crashloopbackoff" => Color::FG_RED,
+        "succeeded" | "completed" => Color::FG_BLUE,
+        _ => Color::FG_WHITE,
     }
 }
 
@@ -106,7 +97,7 @@ pub fn print_pods_table(pods_output: &str, pattern: Option<&str>) {
         if parts.len() >= 5 {
             let name = parts[0].to_string();
             let ready = parts[1].to_string();
-            let status = colorize_status(parts[2]);
+            let status = parts[2].to_string();
             let restarts = parts[3].to_string();
             let age = parts[4].to_string();
             
@@ -118,7 +109,7 @@ pub fn print_pods_table(pods_output: &str, pattern: Option<&str>) {
             }
             
             pod_displays.push(PodDisplay {
-                name: name.blue().bold().to_string(),
+                name,
                 ready,
                 status,
                 restarts,
@@ -138,6 +129,9 @@ pub fn print_pods_table(pods_output: &str, pattern: Option<&str>) {
     
     let mut table = Table::new(&pod_displays);
     style_table(&mut table);
+    for (i, d) in pod_displays.iter().enumerate() {
+        table.modify(Cell::new(i + 1, 2), colorize_status(&d.status));
+    }
     
     if let Some(p) = pattern {
         println!("{}", format!("📋 Found {} pod(s) matching '{}':", pod_displays.len(), p).cyan().bold());
@@ -208,15 +202,11 @@ pub fn print_contexts_table(contexts_output: &str, current_context: Option<&str>
         let context = line.trim();
         if !context.is_empty() {
             let is_current = current_context.map_or(false, |current| current == context);
-            let current_marker = if is_current { colorize_current_marker("✓") } else { " ".to_string() };
+            let current_marker = if is_current { "✓" } else { "" };
             
             context_displays.push(ContextDisplay {
-                context: if is_current {
-                    context.green().bold().to_string()
-                } else {
-                    context.to_string()
-                },
-                current: current_marker,
+                context: context.to_string(),
+                current: current_marker.to_string(),
             });
         }
     }
@@ -228,6 +218,14 @@ pub fn print_contexts_table(contexts_output: &str, current_context: Option<&str>
     
     let mut table = Table::new(&context_displays);
     style_table(&mut table);
+    
+    // Apply green color to current context rows
+    for (i, display) in context_displays.iter().enumerate() {
+        if display.current == "✓" {
+            table
+                .modify(Rows::single(i + 1), Color::FG_GREEN);  // Context name
+        }
+    }
     
     println!("{}", "📋 Available kubectl contexts:".cyan().bold());
     println!("{}", table);
@@ -244,9 +242,9 @@ pub fn print_selection_table<T: Display>(items: &[T], resource_type: &str, detai
         .iter()
         .enumerate()
         .map(|(i, item)| SelectionDisplay {
-            number: format!("{}", i + 1).cyan().bold().to_string(),
-            name: item.to_string().blue().to_string(),
-            details: details_fn.map_or_else(|| "".to_string(), |f| f(item).bright_black().to_string()),
+            number: format!("{}", i + 1).to_string(),
+            name: item.to_string().to_string(),
+            details: details_fn.map_or_else(|| "".to_string(), |f| f(item).to_string()),
         })
         .collect();
     

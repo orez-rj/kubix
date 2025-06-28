@@ -1,60 +1,19 @@
-use crate::{kubectl, utils};
+use crate::{kubectl, utils, display};
 
 /// Handle the pods command - list all pods or filter by pattern
 pub fn handle_pods_command(pattern: Option<&str>, context: Option<&str>, namespace: Option<&str>) {
     match pattern {
-        None => list_pods(context, namespace),
-        Some(pattern_str) => list_pods_with_pattern(pattern_str, context, namespace),
+        None => utils::print_working("Listing pods..."),
+        Some(p) => utils::print_working(&format!("Listing pods matching pattern '{}'...", p)),
     }
+    list_pods(pattern, context, namespace);
 }
 
-/// List pods in the specified context and namespace
-pub fn list_pods(context: Option<&str>, namespace: Option<&str>) {
-    utils::print_working("Listing pods...");
-    
+/// List pods in the specified context and namespace, optionally filtered by pattern
+pub fn list_pods(pattern: Option<&str>, context: Option<&str>, namespace: Option<&str>) {
     match kubectl::execute_with_context(&["get", "pods"], context, namespace) {
         Ok(output) => {
-            println!("{}", output);
-        }
-        Err(error) => {
-            utils::print_error_and_exit(&format!("Error listing pods: {}", error));
-        }
-    }
-}
-
-/// List pods filtered by pattern
-pub fn list_pods_with_pattern(pattern: &str, context: Option<&str>, namespace: Option<&str>) {
-    utils::print_working(&format!("Listing pods matching pattern '{}'...", pattern));
-    
-    match kubectl::execute_with_context(&["get", "pods"], context, namespace) {
-        Ok(output) => {
-            let lines: Vec<&str> = output.lines().collect();
-            if lines.is_empty() {
-                println!("No pods found");
-                return;
-            }
-            
-            // Find header line and matching pods
-            let header = lines.first().unwrap();
-            let matching_lines: Vec<&str> = lines
-                .iter()
-                .skip(1) // Skip header
-                .filter(|line| line.contains(pattern))
-                .copied()
-                .collect();
-            
-            if matching_lines.is_empty() {
-                println!("No pods found matching pattern: '{}'", pattern);
-                return;
-            }
-            
-            println!("📋 Found {} pod(s) matching '{}':", matching_lines.len(), pattern);
-            
-            // Print header and matching pods
-            println!("{}", header);
-            for line in matching_lines {
-                println!("{}", line);
-            }
+            display::print_pods_table(&output, pattern);
         }
         Err(error) => {
             utils::print_error_and_exit(&format!("Error listing pods: {}", error));

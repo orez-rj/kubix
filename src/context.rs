@@ -1,4 +1,4 @@
-use crate::{utils, kubectl};
+use crate::{utils, kubectl, display};
 
 /// Handle the ctx command - list contexts or switch to one by pattern
 pub fn handle_ctx_command(name_pattern: Option<&str>) {
@@ -30,26 +30,11 @@ pub fn resolve_context_pattern(pattern: &str) -> Option<String> {
 
 /// List all available kubectl contexts and mark the current one
 pub fn list_contexts_with_current() {
-    println!("📋 Available kubectl contexts:");
-    
     let current_context = get_current_context();
     
     match kubectl::execute_kubectl(&["config", "get-contexts", "-o", "name"]) {
         Ok(output) => {
-            for context in output.lines() {
-                let context = context.trim();
-                if !context.is_empty() {
-                    if let Some(ref current) = current_context {
-                        if context == current {
-                            println!("  🔹 {} (current)", context);
-                        } else {
-                            println!("  • {}", context);
-                        }
-                    } else {
-                        println!("  • {}", context);
-                    }
-                }
-            }
+            display::print_contexts_table(&output, current_context.as_deref());
         }
         Err(error) => {
             utils::print_error_and_exit(&format!("Error listing contexts: {}", error));
