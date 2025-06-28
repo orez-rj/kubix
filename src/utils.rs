@@ -1,31 +1,29 @@
 use crate::display;
-use std::process::exit;
 use std::io::{self, Write};
 
 /// Print an error message and exit the program
 pub fn print_error_and_exit(message: &str) -> ! {
-    display::print_error_styled(message);
-    exit(1);
+    display::print_error_and_exit(message);
 }
 
 /// Print a working/progress message with emoji and styling
 pub fn print_working(message: &str) {
-    display::print_working_styled(message);
+    display::print_working(message);
 }
 
 /// Print a success message with emoji and styling
 pub fn print_success(message: &str) {
-    display::print_success_styled(message);
+    display::print_success(message);
 }
 
 /// Print an error message (without exiting) with emoji and styling
 pub fn print_error(message: &str) {
-    display::print_error_styled(message);
+    display::print_error(message);
 }
 
 /// Print an info message with emoji and styling
 pub fn print_info(message: &str) {
-    display::print_info_styled(message);
+    display::print_info(message);
 }
 
 /// Generic function to handle user selection from multiple options
@@ -37,13 +35,13 @@ pub fn select_from_matches<T: Clone + std::fmt::Display>(
 ) -> Option<T> {
     match matches.len() {
         0 => {
-            display::print_error_styled(&format!("No {} found matching pattern: '{}'", resource_type, pattern));
+            display::print_error(&format!("No {} found matching pattern: '{}'", resource_type, pattern));
             None
         }
         1 => {
             // Exactly one match - use it automatically
             let item = &matches[0];
-            display::print_success_styled(&format!("Found {}: {}", resource_type, item));
+            display::print_success(&format!("Found {}: {}", resource_type, item));
             Some(item.clone())
         }
         _ => {

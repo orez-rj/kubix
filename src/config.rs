@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{self, Write};
-use crate::utils;
+use crate::{utils, display};
 use crate::cli::ConfigCommands;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -91,44 +91,35 @@ pub fn show_config() {
     let config = KubixConfig::load();
     let config_path = KubixConfig::get_config_path();
     
-    println!("📋 Kubix Configuration");
-    println!("📁 Config file: {}", config_path);
+    display::print_info(&format!("Config file: {}", config_path));
     println!();
     
     // Display commands
-    if !config.commands.is_empty() {
-        println!("⚡ Commands:");
-        let mut commands: Vec<_> = config.commands.iter().collect();
-        commands.sort_by_key(|&(k, _)| k);
-        for (nickname, command) in commands {
-            println!("  {} → {}", nickname, command);
-        }
+    display::print_commands_table(&config.commands);
+    
+    // A new line between commands and scripts to make it more readable
+    if !config.commands.is_empty() && !config.scripts.is_empty() {
         println!();
     }
     
     // Display scripts
-    if !config.scripts.is_empty() {
-        println!("📜 Scripts:");
-        let mut scripts: Vec<_> = config.scripts.iter().collect();
-        scripts.sort_by_key(|&(k, _)| k);
-        for (nickname, script) in scripts {
-            println!("  {} → {}", nickname, script);
-        }
-        println!();
-    }
+    display::print_scripts_table(&config.scripts);
     
     if config.commands.is_empty() && config.scripts.is_empty() {
-        utils::print_info("No custom commands or scripts configured");
+        display::print_info("No custom commands or scripts configured.");
     }
-    println!("Add configurations using the subcommands:");
-    println!("  kubix config add-command <nickname> <command>");
-    println!("  kubix config add-script <nickname> <script>");
+    println!();
+    display::print_info("Add or remove configurations using the subcommands:");
+    println!("  • kubix config add-command <nickname> <command>");
+    println!("  • kubix config add-script <nickname> <script>");
+    println!("  • kubix config remove-command <nickname>");
+    println!("  • kubix config remove-script <nickname>");
     println!();
     
-    println!("💡 Usage:");
-    println!("  kubix exec <pod> -c <command>   # Use command nickname");
-    println!("  kubix exec <pod> -s <script>    # Use script nickname");
-}
+    display::print_info("💡 Usage:");
+    println!("  • kubix exec <pod> -c <command>   # Use command nickname");
+    println!("  • kubix exec <pod> -s <script>    # Use script nickname");
+    }
 
 /// Add a command with confirmation if it already exists
 pub fn add_command(nickname: &str, command: &str) {

@@ -1,4 +1,6 @@
-use tabled::{Table, Tabled, settings::{Style, Alignment, object::Columns}};
+use tabled::{Table, Tabled, settings::{
+    Style, object::{Rows, Columns}, Color
+}};
 use owo_colors::OwoColorize;
 use std::fmt::Display;
 
@@ -55,12 +57,12 @@ pub struct SelectionDisplay {
     pub details: String,
 }
 
-/// Apply beautiful rounded styling to a table
+/// Apply styling to a table
 fn style_table(table: &mut Table) {
     table
         .with(Style::rounded())
-        .modify(Columns::first(), Alignment::left())
-        .modify(Columns::new(1..), Alignment::left());
+        .modify(Columns::first(), Color::FG_BRIGHT_BLUE)
+        .modify(Rows::first(), Color::FG_BRIGHT_MAGENTA);
 }
 
 /// Apply color to status-based content
@@ -155,8 +157,8 @@ pub fn print_commands_table(commands: &std::collections::HashMap<String, String>
     let mut command_displays: Vec<CommandDisplay> = commands
         .iter()
         .map(|(nickname, command)| CommandDisplay {
-            nickname: nickname.blue().bold().to_string(),
-            command: command.bright_black().to_string(),
+            nickname: nickname.to_string(),
+            command: command.to_string(),
         })
         .collect();
     
@@ -178,8 +180,8 @@ pub fn print_scripts_table(scripts: &std::collections::HashMap<String, String>) 
     let mut script_displays: Vec<ScriptDisplay> = scripts
         .iter()
         .map(|(nickname, script)| ScriptDisplay {
-            nickname: nickname.blue().bold().to_string(),
-            script: script.bright_black().to_string(),
+            nickname: nickname.to_string(),
+            script: script.to_string(),
         })
         .collect();
     
@@ -256,21 +258,32 @@ pub fn print_selection_table<T: Display>(items: &[T], resource_type: &str, detai
 }
 
 /// Print a simple info message with styling
-pub fn print_info_styled(message: &str) {
+pub fn print_info(message: &str) {
     println!("{} {}", "ℹ️".cyan(), message.bright_blue());
 }
 
 /// Print a success message with styling
-pub fn print_success_styled(message: &str) {
+pub fn print_success(message: &str) {
     println!("{} {}", "✅".green(), message.green().bold());
 }
 
 /// Print an error message with styling
-pub fn print_error_styled(message: &str) {
+pub fn print_error(message: &str) {
     eprintln!("{} {}", "❌".red(), message.red().bold());
 }
 
+/// Print an error message and exit
+pub fn print_error_and_exit(message: &str) -> ! {
+    print_error(message);
+    std::process::exit(1);
+}
+
+/// Print a warning message with styling
+pub fn print_warning(message: &str) {
+    println!("{} {}", "⚠️".yellow(), message.yellow().bold());
+}
+
 /// Print a working message with styling
-pub fn print_working_styled(message: &str) {
+pub fn print_working(message: &str) {
     println!("{} {}", "⚡".yellow(), message.cyan());
 } 
