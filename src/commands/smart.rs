@@ -1,4 +1,5 @@
-use crate::{exec, context, namespace, display};
+use crate::{display};
+use crate::commands::{exec, context, namespace};
 
 /// Process a smart/natural language command
 pub fn process_smart_command(command: &str) {

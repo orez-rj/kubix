@@ -1,4 +1,5 @@
-use crate::{kubectl, pods, display, config};
+use crate::{kubectl, display};
+use crate::commands::{pods, config};
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
