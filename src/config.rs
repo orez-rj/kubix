@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::{self, Write};
 use crate::{utils, display};
 use crate::cli::ConfigCommands;
 
@@ -24,11 +23,11 @@ impl Default for KubixConfig {
 impl KubixConfig {
     /// Load configuration using confy
     pub fn load() -> Self {
-        match confy::load("kubix", None) {
+        match confy::load("kubix", Some("kubix")) {
             Ok(config) => config,
             Err(err) => {
-                eprintln!("⚠️ Warning: Failed to load config: {}", err);
-                eprintln!("Using default configuration");
+                display::print_warning(&format!("Failed to load config: {}", err));
+                display::print_warning("Using default configuration");
                 Self::default()
             }
         }
@@ -36,7 +35,7 @@ impl KubixConfig {
 
     /// Save configuration using confy
     pub fn save(&self) -> Result<(), String> {
-        match confy::store("kubix", None, self) {
+        match confy::store("kubix", Some("kubix"), self) {
             Ok(_) => Ok(()),
             Err(err) => Err(format!("Failed to save config: {}", err)),
         }
@@ -54,7 +53,7 @@ impl KubixConfig {
 
     /// Get the config file path
     pub fn get_config_path() -> String {
-        match confy::get_configuration_file_path("kubix", None) {
+        match confy::get_configuration_file_path("kubix", Some("kubix")) {
             Ok(path) => path.to_string_lossy().to_string(),
             Err(_) => "Unknown".to_string(),
         }
@@ -91,35 +90,38 @@ pub fn show_config() {
     let config = KubixConfig::load();
     let config_path = KubixConfig::get_config_path();
     
-    display::print_info(&format!("Config file: {}", config_path));
-    println!();
+    display::print_info(&format!("Config file: {}\n", config_path));
     
     // Display commands
     display::print_commands_table(&config.commands);
     
     // A new line between commands and scripts to make it more readable
     if !config.commands.is_empty() && !config.scripts.is_empty() {
-        println!();
+        display::print_line("");
     }
     
     // Display scripts
     display::print_scripts_table(&config.scripts);
     
     if config.commands.is_empty() && config.scripts.is_empty() {
-        display::print_info("No custom commands or scripts configured.");
+        display::print_info("No custom commands or scripts configured.\n");
+    } else {
+        display::print_line("");
     }
-    println!();
     display::print_info("Add or remove configurations using the subcommands or edit the config file directly:");
-    println!("  • kubix config add-command <nickname> <command>");
-    println!("  • kubix config add-script <nickname> <script>");
-    println!("  • kubix config remove-command <nickname>");
-    println!("  • kubix config remove-script <nickname>");
-    println!();
+    display::print_lines(&[
+        "  • kubix config add-command <nickname> <command>",
+        "  • kubix config add-script <nickname> <script>", 
+        "  • kubix config remove-command <nickname>",
+        "  • kubix config remove-script <nickname>\n",
+    ]);
     
     display::print_info("💡 Usage:");
-    println!("  • kubix exec <pod> -c <command>   # Use command nickname");
-    println!("  • kubix exec <pod> -s <script>    # Use script nickname");
-    }
+    display::print_lines(&[
+        "  • kubix exec <pod> -c <command>   # Use command nickname",
+        "  • kubix exec <pod> -s <script>    # Use script nickname"
+    ]);
+}
 
 /// Add a command with confirmation if it already exists
 pub fn add_command(nickname: &str, command: &str) {
@@ -127,9 +129,9 @@ pub fn add_command(nickname: &str, command: &str) {
     
     // Check if command already exists
     if let Some(existing_command) = config.commands.get(nickname) {
-        println!("⚠️  Command '{}' already exists: '{}'", nickname, existing_command);
-        if !prompt_for_confirmation("Do you want to overwrite it?") {
-            println!("Operation cancelled.");
+        display::print_warning(&format!("Command '{}' already exists: '{}'", nickname, existing_command));
+        if !utils::prompt_for_confirmation("Do you want to overwrite it?") {
+            display::print_error("Operation cancelled.");
             return;
         }
     }
@@ -139,10 +141,10 @@ pub fn add_command(nickname: &str, command: &str) {
     
     match config.save() {
         Ok(_) => {
-            utils::print_success(&format!("Command '{}' added successfully", nickname));
+            display::print_success(&format!("Command '{}' added successfully", nickname));
         }
         Err(err) => {
-            utils::print_error_and_exit(&format!("Failed to save config: {}", err));
+            display::print_error_and_exit(&format!("Failed to save config: {}", err));
         }
     }
 }
@@ -153,9 +155,9 @@ pub fn add_script(nickname: &str, script: &str) {
     
     // Check if script already exists
     if let Some(existing_script) = config.scripts.get(nickname) {
-        println!("⚠️  Script '{}' already exists: '{}'", nickname, existing_script);
-        if !prompt_for_confirmation("Do you want to overwrite it?") {
-            println!("Operation cancelled.");
+        display::print_warning(&format!("Script '{}' already exists: '{}'", nickname, existing_script));
+        if !utils::prompt_for_confirmation("Do you want to overwrite it?") {
+            display::print_error("Operation cancelled.");
             return;
         }
     }
@@ -165,10 +167,10 @@ pub fn add_script(nickname: &str, script: &str) {
     
     match config.save() {
         Ok(_) => {
-            utils::print_success(&format!("Script '{}' added successfully", nickname));
+            display::print_success(&format!("Script '{}' added successfully", nickname));
         }
         Err(err) => {
-            utils::print_error_and_exit(&format!("Failed to save config: {}", err));
+            display::print_error_and_exit(&format!("Failed to save config: {}", err));
         }
     }
 }
@@ -180,14 +182,14 @@ pub fn remove_command(nickname: &str) {
     if config.commands.remove(nickname).is_some() {
         match config.save() {
             Ok(_) => {
-                utils::print_success(&format!("Command '{}' removed successfully", nickname));
+                display::print_success(&format!("Command '{}' removed successfully", nickname));
             }
             Err(err) => {
-                utils::print_error_and_exit(&format!("Failed to save config: {}", err));
+                display::print_error_and_exit(&format!("Failed to save config: {}", err));
             }
         }
     } else {
-        utils::print_error(&format!("Command '{}' not found", nickname));
+        display::print_error(&format!("Command '{}' not found", nickname));
     }
 }
 
@@ -198,52 +200,29 @@ pub fn remove_script(nickname: &str) {
     if config.scripts.remove(nickname).is_some() {
         match config.save() {
             Ok(_) => {
-                utils::print_success(&format!("Script '{}' removed successfully", nickname));
+                display::print_success(&format!("Script '{}' removed successfully", nickname));
             }
             Err(err) => {
-                utils::print_error_and_exit(&format!("Failed to save config: {}", err));
+                display::print_error_and_exit(&format!("Failed to save config: {}", err));
             }
         }
     } else {
-        utils::print_error(&format!("Script '{}' not found", nickname));
-    }
-}
-
-/// Prompt user for yes/no confirmation
-fn prompt_for_confirmation(message: &str) -> bool {
-    print!("❓ {} [y/N]: ", message);
-    io::stdout().flush().unwrap();
-    
-    let mut input = String::new();
-    match io::stdin().read_line(&mut input) {
-        Ok(_) => {
-            let input = input.trim().to_lowercase();
-            input == "y" || input == "yes"
-        }
-        Err(_) => {
-            // Handle Ctrl+C or read error as cancellation
-            false
-        }
+        display::print_error(&format!("Script '{}' not found", nickname));
     }
 }
 
 /// Default commands for the configuration
 fn default_commands() -> HashMap<String, String> {
     let mut commands = HashMap::new();
-    commands.insert("shell".to_string(), "python manage.py shell".to_string());
-    commands.insert("migrate".to_string(), "python manage.py migrate".to_string());
-    commands.insert("console".to_string(), "rails console".to_string());
-    commands.insert("logs".to_string(), "tail -f /var/log/app.log".to_string());
+    commands.insert("shell".to_string(), "$BIN_PATH/python manage.py shell".to_string());
     commands.insert("ps".to_string(), "ps aux".to_string());
-    commands.insert("env".to_string(), "printenv".to_string());
     commands
 }
 
 /// Default scripts for the configuration
 fn default_scripts() -> HashMap<String, String> {
     let mut scripts = HashMap::new();
-    scripts.insert("deploy".to_string(), "./scripts/deploy.sh".to_string());
-    scripts.insert("setup".to_string(), "./scripts/setup.py".to_string());
-    scripts.insert("backup".to_string(), "~/scripts/backup.sh".to_string());
+    scripts.insert("deploy".to_string(), "/Users/myuser/scripts/deploy.sh".to_string());
+    scripts.insert("setup".to_string(), "~/scripts/setup.py".to_string());
     scripts
 } 

@@ -1,8 +1,8 @@
-use crate::{exec, context, namespace};
+use crate::{exec, context, namespace, display};
 
 /// Process a smart/natural language command
 pub fn process_smart_command(command: &str) {
-    println!("🧠 Processing smart command: {}", command);
+    display::print_info(&format!("🧠 Processing smart command: {}", command));
     
     // Pattern matching for common use cases
     if command.contains("run") && command.contains("on pod") {
@@ -34,19 +34,19 @@ fn handle_run_command(command: &str) {
             namespace::resolve_namespace_pattern(pattern, resolved_context.as_deref())
         );
         
-        println!("🎯 Parsed command:");
-        println!("   Command: {}", cmd_to_run);
-        println!("   Pod pattern: {}", pod_pattern);
+        display::print_info(&format!("🎯 Parsed command:"));
+        display::print_info(&format!("   Command: {}", cmd_to_run));
+        display::print_info(&format!("   Pod pattern: {}", pod_pattern));
         if let Some(ref ctx) = resolved_context {
-            println!("   Context: {}", ctx);
+            display::print_info(&format!("   Context: {}", ctx));
         }
         if let Some(ref ns) = resolved_namespace {
-            println!("   Namespace: {}", ns);
+            display::print_info(&format!("   Namespace: {}", ns));
         }
         
         exec::run_command_on_pod(pod_pattern, cmd_to_run, resolved_context.as_deref(), resolved_namespace.as_deref());
     } else {
-        println!("❓ Could not parse command. Make sure to wrap the command in single quotes.");
+        display::print_error("❓ Could not parse command. Make sure to wrap the command in single quotes.");
     }
 }
 
@@ -63,7 +63,7 @@ fn handle_shell_command(command: &str) {
         namespace::resolve_namespace_pattern(pattern, resolved_context.as_deref())
     );
     
-    println!("🎯 Opening shell to pod matching: {}", pod_pattern);
+    display::print_info(&format!("🎯 Opening shell to pod matching: {}", pod_pattern));
     
     exec::bash_to_pod(pod_pattern, resolved_context.as_deref(), resolved_namespace.as_deref());
 }
@@ -84,11 +84,11 @@ fn handle_script_command(command: &str) {
             namespace::resolve_namespace_pattern(pattern, resolved_context.as_deref())
         );
         
-        println!("🎯 Executing script: {}", script_path);
+        display::print_info(&format!("🎯 Executing script: {}", script_path));
         
         exec::exec_script_on_pod(pod_pattern, script_path, resolved_context.as_deref(), resolved_namespace.as_deref());
     } else {
-        println!("❓ Could not parse script path. Make sure to wrap the script path in single quotes.");
+        display::print_error("❓ Could not parse script path. Make sure to wrap the script path in single quotes.");
     }
 }
 
@@ -153,14 +153,14 @@ fn extract_namespace(command: &str) -> Option<&str> {
 }
 
 fn print_smart_help() {
-    println!("❓ Smart command not recognized. Try patterns like:");
-    println!("   📝 Commands:");
-    println!("     'run command 'python manage.py shell' on pod that has web-internal in its name on testing context'");
-    println!("     'run command 'ls -la' on pod web in production context'");
-    println!("   🐚 Shell access:");
-    println!("     'bash to pod web'");
-    println!("     'shell to pod that has api in its name'");
-    println!("   📜 Script execution:");
-    println!("     'run script './deploy.sh' on pod web in production context'");
-    println!("     'exec script './setup.py' on pod that has worker in its name'");
+    display::print_info("❓ Smart command not recognized. Try patterns like:");
+    display::print_info("   📝 Commands:");
+    display::print_info("     'run command 'python manage.py shell' on pod that has web-internal in its name on testing context'");
+    display::print_info("     'run command 'ls -la' on pod web in production context'");
+    display::print_info("   🐚 Shell access:");
+    display::print_info("     'bash to pod web'");
+    display::print_info("     'shell to pod that has api in its name'");
+    display::print_info("   📜 Script execution:");
+    display::print_info("     'run script './deploy.sh' on pod web in production context'");
+    display::print_info("     'exec script './setup.py' on pod that has worker in its name'");
 } 

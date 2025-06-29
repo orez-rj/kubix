@@ -1,4 +1,4 @@
-use crate::{utils, kubectl};
+use crate::{display, utils, kubectl};
 
 /// Resolve a namespace pattern to an exact namespace name
 /// Returns None if user cancels, exits process if no matches found
@@ -7,7 +7,7 @@ pub fn resolve_namespace_pattern(pattern: &str, context: Option<&str>) -> Option
     let namespaces = match get_all_namespaces(context) {
         Ok(namespaces) => namespaces,
         Err(error) => {
-            utils::print_error_and_exit(&format!("Error getting namespaces: {}", error));
+            display::print_error_and_exit(&format!("Error getting namespaces: {}", error));
         }
     };
     

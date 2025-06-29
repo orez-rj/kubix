@@ -3,8 +3,8 @@ use crate::{kubectl, utils, display};
 /// Handle the pods command - list all pods or filter by pattern
 pub fn handle_pods_command(pattern: Option<&str>, context: Option<&str>, namespace: Option<&str>) {
     match pattern {
-        None => utils::print_working("Listing pods..."),
-        Some(p) => utils::print_working(&format!("Listing pods matching pattern '{}'...", p)),
+        None => display::print_working("Listing pods..."),
+        Some(p) => display::print_working(&format!("Listing pods matching pattern '{}'...", p)),
     }
     list_pods(pattern, context, namespace);
 }
@@ -16,7 +16,7 @@ pub fn list_pods(pattern: Option<&str>, context: Option<&str>, namespace: Option
             display::print_pods_table(&output, pattern);
         }
         Err(error) => {
-            utils::print_error_and_exit(&format!("Error listing pods: {}", error));
+            display::print_error_and_exit(&format!("Error listing pods: {}", error));
         }
     }
 }
@@ -32,7 +32,7 @@ pub fn find_pods(pattern: &str, context: Option<&str>, namespace: Option<&str>) 
                 .collect()
         }
         Err(error) => {
-            utils::print_error(&format!("Error finding pods: {}", error));
+            display::print_error(&format!("Error finding pods: {}", error));
             Vec::new()
         }
     }
@@ -43,15 +43,4 @@ pub fn select_pod(pattern: &str, context: Option<&str>, namespace: Option<&str>)
     let matching_pods = find_pods(pattern, context, namespace);
     utils::select_from_matches(matching_pods, pattern, "pod")
 }
-
-/// Get detailed information about a pod
-pub fn get_pod_info(pod_name: &str, context: Option<&str>, namespace: Option<&str>) {
-    match kubectl::execute_with_context(&["describe", "pod", pod_name], context, namespace) {
-        Ok(output) => {
-            println!("{}", output);
-        }
-        Err(error) => {
-            utils::print_error_and_exit(&format!("Error getting pod info: {}", error));
-        }
-    }
-} 
+ 

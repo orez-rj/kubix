@@ -15,7 +15,7 @@ use cli::{Cli, Commands};
 fn main() {
     // Setup signal handling for graceful cancellation
     ctrlc::set_handler(move || {
-        eprintln!("\nOperation cancelled by user");
+        display::print_error("\nOperation cancelled by user");
         std::process::exit(130); // Standard exit code for SIGINT
     }).expect("Error setting Ctrl+C handler");
 

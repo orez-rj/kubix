@@ -15,7 +15,7 @@ pub fn resolve_context_pattern(pattern: &str) -> Option<String> {
     let contexts = match get_all_contexts() {
         Ok(contexts) => contexts,
         Err(error) => {
-            utils::print_error_and_exit(&format!("Error getting contexts: {}", error));
+            display::print_error_and_exit(&format!("Error getting contexts: {}", error));
         }
     };
     
@@ -37,7 +37,7 @@ pub fn list_contexts_with_current() {
             display::print_contexts_table(&output, current_context.as_deref());
         }
         Err(error) => {
-            utils::print_error_and_exit(&format!("Error listing contexts: {}", error));
+            display::print_error_and_exit(&format!("Error listing contexts: {}", error));
         }
     }
 }
@@ -47,38 +47,20 @@ pub fn switch_to_context_by_pattern(pattern: &str) {
     if let Some(resolved_context) = resolve_context_pattern(pattern) {
         use_context(&resolved_context);
     } else {
-        println!("Operation cancelled.");
-    }
-}
-
-/// List all available kubectl contexts
-pub fn list_contexts() {
-    println!("📋 Available kubectl contexts:");
-    
-    match kubectl::execute_kubectl(&["config", "get-contexts", "-o", "name"]) {
-        Ok(output) => {
-            for context in output.lines() {
-                if !context.trim().is_empty() {
-                    println!("  • {}", context.trim());
-                }
-            }
-        }
-        Err(error) => {
-            utils::print_error_and_exit(&format!("Error listing contexts: {}", error));
-        }
+        display::print_error("Operation cancelled.");
     }
 }
 
 /// Switch to a specific kubectl context
 pub fn use_context(name: &str) {
-    println!("🔄 Switching to context: {}", name);
+    display::print_info(&format!("🔄 Switching to context: {}", name));
     
     match kubectl::execute_kubectl(&["config", "use-context", name]) {
         Ok(_) => {
-            utils::print_success(&format!("Successfully switched to context: {}", name));
+            display::print_success(&format!("Successfully switched to context: {}", name));
         }
         Err(error) => {
-            utils::print_error_and_exit(&format!("Error switching context: {}", error));
+            display::print_error_and_exit(&format!("Error switching context: {}", error));
         }
     }
 }

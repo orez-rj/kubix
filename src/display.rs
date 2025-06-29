@@ -80,7 +80,7 @@ fn colorize_status(status: &str) -> Color {
 pub fn print_pods_table(pods_output: &str, pattern: Option<&str>) {
     let lines: Vec<&str> = pods_output.lines().collect();
     if lines.is_empty() {
-        println!("{}", "No pods found".yellow());
+        print_line(&"No pods found".yellow().to_string());
         return;
     }
 
@@ -120,9 +120,9 @@ pub fn print_pods_table(pods_output: &str, pattern: Option<&str>) {
     
     if pod_displays.is_empty() {
         if let Some(p) = pattern {
-            println!("{}", format!("No pods found matching pattern: '{}'", p).yellow());
+            print_line(&format!("No pods found matching pattern: '{}'", p).yellow().to_string());
         } else {
-            println!("{}", "No pods found".yellow());
+            print_line(&"No pods found".yellow().to_string());
         }
         return;
     }
@@ -133,13 +133,13 @@ pub fn print_pods_table(pods_output: &str, pattern: Option<&str>) {
         table.modify(Cell::new(i + 1, 2), colorize_status(&d.status));
     }
     
-    if let Some(p) = pattern {
-        println!("{}", format!("📋 Found {} pod(s) matching '{}':", pod_displays.len(), p).cyan().bold());
+    let header = if let Some(p) = pattern {
+        format!("📋 Found {} pod(s) matching '{}':", pod_displays.len(), p).cyan().bold().to_string()
     } else {
-        println!("{}", "📋 Pods:".cyan().bold());
-    }
+        "📋 Pods:".cyan().bold().to_string()
+    };
     
-    println!("{}", table);
+    print_lines(&[&header, &table.to_string()]);
 }
 
 /// Print commands in a beautiful table format
@@ -161,8 +161,8 @@ pub fn print_commands_table(commands: &std::collections::HashMap<String, String>
     let mut table = Table::new(&command_displays);
     style_table(&mut table);
     
-    println!("{}", "⚡ Commands:".yellow().bold());
-    println!("{}", table);
+    let header = "⚡ Commands:".yellow().bold().to_string();
+    print_lines(&[&header, &table.to_string()]);
 }
 
 /// Print scripts in a beautiful table format
@@ -184,15 +184,15 @@ pub fn print_scripts_table(scripts: &std::collections::HashMap<String, String>) 
     let mut table = Table::new(&script_displays);
     style_table(&mut table);
     
-    println!("{}", "📜 Scripts:".yellow().bold());
-    println!("{}", table);
+    let header = "📜 Scripts:".yellow().bold().to_string();
+    print_lines(&[&header, &table.to_string()]);
 }
 
 /// Print contexts in a beautiful table format
 pub fn print_contexts_table(contexts_output: &str, current_context: Option<&str>) {
     let lines: Vec<&str> = contexts_output.lines().collect();
     if lines.is_empty() {
-        println!("{}", "No contexts found".yellow());
+        print_line(&"No contexts found".yellow().to_string());
         return;
     }
 
@@ -212,7 +212,7 @@ pub fn print_contexts_table(contexts_output: &str, current_context: Option<&str>
     }
     
     if context_displays.is_empty() {
-        println!("{}", "No contexts found".yellow());
+        print_line(&"No contexts found".yellow().to_string());
         return;
     }
     
@@ -227,14 +227,14 @@ pub fn print_contexts_table(contexts_output: &str, current_context: Option<&str>
         }
     }
     
-    println!("{}", "📋 Available kubectl contexts:".cyan().bold());
-    println!("{}", table);
+    let header = "📋 Available kubectl contexts:".cyan().bold().to_string();
+    print_lines(&[&header, &table.to_string()]);
 }
 
 /// Print selection items in a beautiful table format
 pub fn print_selection_table<T: Display>(items: &[T], resource_type: &str, details_fn: Option<fn(&T) -> String>) {
     if items.is_empty() {
-        println!("{}", format!("No {} found", resource_type).yellow());
+        print_line(&format!("No {} found", resource_type).yellow().to_string());
         return;
     }
 
@@ -251,23 +251,23 @@ pub fn print_selection_table<T: Display>(items: &[T], resource_type: &str, detai
     let mut table = Table::new(&selection_displays);
     style_table(&mut table);
     
-    println!("{}", format!("🔍 Found {} {}(s):", items.len(), resource_type).cyan().bold());
-    println!("{}", table);
+    let header = format!("🔍 Found {} {}(s):", items.len(), resource_type).cyan().bold().to_string();
+    print_lines(&[&header, &table.to_string()]);
 }
 
 /// Print a simple info message with styling
 pub fn print_info(message: &str) {
-    println!("{} {}", "ℹ️".cyan(), message.bright_blue());
+    print_line(&format!("{} {}", "ℹ️".cyan(), message.bright_blue()));
 }
 
 /// Print a success message with styling
 pub fn print_success(message: &str) {
-    println!("{} {}", "✅".green(), message.green().bold());
+    print_line(&format!("{} {}", "✅".green(), message.green().bold()));
 }
 
 /// Print an error message with styling
 pub fn print_error(message: &str) {
-    eprintln!("{} {}", "❌".red(), message.red().bold());
+    eprint_line(&format!("{} {}", "❌".red(), message.red().bold()));
 }
 
 /// Print an error message and exit
@@ -278,10 +278,30 @@ pub fn print_error_and_exit(message: &str) -> ! {
 
 /// Print a warning message with styling
 pub fn print_warning(message: &str) {
-    println!("{} {}", "⚠️".yellow(), message.yellow().bold());
+    eprint_line(&format!("{} {}", "⚠️".yellow(), message.yellow().bold()));
 }
 
 /// Print a working message with styling
 pub fn print_working(message: &str) {
-    println!("{} {}", "⚡".yellow(), message.cyan());
-} 
+    print_line(&format!("{} {}", "⚡".yellow(), message.cyan()));
+}
+
+/// Centralized error print line function
+pub fn eprint_line(message: &str) {
+    eprintln!("{}", message);
+}
+
+/// Centralized print line function
+pub fn print_line(message: &str) {
+    println!("{}", message);
+}
+
+/// Print multiple lines efficiently in a single call
+pub fn print_lines(lines: &[&str]) {
+    if lines.is_empty() {
+        return;
+    }
+    
+    let output = lines.join("\n");
+    println!("{}", output);
+}

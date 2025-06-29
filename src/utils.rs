@@ -1,31 +1,6 @@
 use crate::display;
 use std::io::{self, Write};
 
-/// Print an error message and exit the program
-pub fn print_error_and_exit(message: &str) -> ! {
-    display::print_error_and_exit(message);
-}
-
-/// Print a working/progress message with emoji and styling
-pub fn print_working(message: &str) {
-    display::print_working(message);
-}
-
-/// Print a success message with emoji and styling
-pub fn print_success(message: &str) {
-    display::print_success(message);
-}
-
-/// Print an error message (without exiting) with emoji and styling
-pub fn print_error(message: &str) {
-    display::print_error(message);
-}
-
-/// Print an info message with emoji and styling
-pub fn print_info(message: &str) {
-    display::print_info(message);
-}
-
 /// Generic function to handle user selection from multiple options
 /// Returns None if no matches, Some(selected_item) if single match or user selection
 pub fn select_from_matches<T: Clone + std::fmt::Display>(
@@ -71,7 +46,7 @@ fn prompt_user_choice(max_options: usize, resource_type: &str) -> Option<usize> 
             match input.parse::<usize>() {
                 Ok(num) if num >= 1 && num <= max_options => Some(num - 1),
                 _ => {
-                    print_error(&format!("Invalid selection. Please enter a number between 1 and {} or 'q' to quit.", max_options));
+                    display::print_error(&format!("Invalid selection. Please enter a number between 1 and {} or 'q' to quit.", max_options));
                     prompt_user_choice(max_options, resource_type) // Recursive call for retry
                 }
             }
@@ -81,4 +56,22 @@ fn prompt_user_choice(max_options: usize, resource_type: &str) -> Option<usize> 
             None
         }
     }
-} 
+}
+
+/// Prompt user for yes/no confirmation
+pub fn prompt_for_confirmation(message: &str) -> bool {
+    print!("❓ {} [y/N]: ", message);
+    io::stdout().flush().unwrap();
+    
+    let mut input = String::new();
+    match io::stdin().read_line(&mut input) {
+        Ok(_) => {
+            let input = input.trim().to_lowercase();
+            input == "y" || input == "yes"
+        }
+        Err(_) => {
+            // Handle Ctrl+C or read error as cancellation
+            false
+        }
+    }
+}
