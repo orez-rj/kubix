@@ -68,19 +68,3 @@ pub fn execute_interactive_with_context(
     let args_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     execute_kubectl_interactive(&args_refs)
 }
-
-/// Get the current kubectl context
-pub fn get_current_context() -> Result<String, String> {
-    execute_kubectl(&["config", "current-context"])
-        .map(|output| output.trim().to_string())
-}
-
-/// Get all available kubectl contexts
-pub fn get_contexts() -> Result<String, String> {
-    execute_kubectl(&["config", "get-contexts", "-o", "name"])
-}
-
-/// Switch to a specific kubectl context
-pub fn switch_context(context_name: &str) -> Result<String, String> {
-    execute_kubectl(&["config", "use-context", context_name])
-} 
