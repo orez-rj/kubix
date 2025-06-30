@@ -3,6 +3,7 @@ use crate::commands::{pods, config};
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
+use std::path::Path;
 
 /// Handle the unified exec command
 pub fn handle_exec_command(
@@ -24,7 +25,7 @@ pub fn handle_exec_command(
         (None, Some(script_input)) => {
             // Execute a script
             let resolved_script = config.resolve_script(script_input);
-            exec_script_on_pod(pod_pattern, &resolved_script, context, namespace);
+            exec_script_on_pod(pod_pattern, &resolved_script, &config, context, namespace);
         }
         (None, None) => {
             // Default to bash
@@ -72,10 +73,39 @@ pub fn run_command_on_pod(
     }
 }
 
+/// Determine the appropriate interpreter based on file extension and config
+fn get_interpreter_for_script(script_path: &str, config: &config::KubixConfig) -> Option<String> {
+    let path = Path::new(script_path);
+    if let Some(extension) = path.extension()?.to_str() {
+        // First check for custom interpreter in config
+        if let Some(custom_interpreter) = config.resolve_interpreter(extension) {
+            return Some(custom_interpreter);
+        }
+        
+        // Fall back to default interpreters
+        match extension {
+            "py" => Some("python3".to_string()),
+            "js" => Some("node".to_string()),
+            "rb" => Some("ruby".to_string()),
+            "pl" => Some("perl".to_string()),
+            "php" => Some("php".to_string()),
+            "sh" | "bash" => Some("bash".to_string()),
+            "r" => Some("Rscript".to_string()),
+            "lua" => Some("lua".to_string()),
+            "scala" => Some("scala".to_string()),
+            "groovy" => Some("groovy".to_string()),
+            _ => None, // Unknown extension, fall back to shebang detection
+        }
+    } else {
+        None
+    }
+}
+
 /// Execute a local script on a pod
 pub fn exec_script_on_pod(
     pod_pattern: &str, 
-    script_path: &str, 
+    script_path: &str,
+    config: &config::KubixConfig,
     context: Option<&str>, 
     namespace: Option<&str>
 ) {
@@ -88,6 +118,9 @@ pub fn exec_script_on_pod(
                 display::print_error_and_exit(&format!("Failed to read script file: {}", script_path));
             });
         
+        // Determine the interpreter to use
+        let interpreter = get_interpreter_for_script(script_path, &config);
+        
         // Build kubectl command
         let mut cmd = Command::new("kubectl");
         
@@ -99,12 +132,27 @@ pub fn exec_script_on_pod(
             cmd.args(&["-n", ns]);
         }
         
-        cmd.args(&["exec", "-it", &pod_name, "--", "sh"])
-           .stdin(Stdio::piped());
+        // Choose execution strategy based on interpreter detection
+        match interpreter {
+            Some(interp) => {
+                // Use detected interpreter directly
+                display::print_info(&format!("🔍 Detected interpreter: {}", interp));
+                
+                // Standard interpreter execution - all interpreters can read from stdin
+                cmd.args(&["exec", "-i", &pod_name, "--", &interp]);
+            }
+            None => {
+                // Fall back to shell execution
+                display::print_info("🔍 No file extension detected, using shell with shebang detection");
+                cmd.args(&["exec", "-i", &pod_name, "--", "sh"]);
+            }
+        }
         
+        cmd.stdin(Stdio::piped());
         let mut child = cmd.spawn()
             .expect("Failed to spawn kubectl process");
         
+        // Send script content to the process
         if let Some(stdin) = child.stdin.as_mut() {
             stdin.write_all(script_content.as_bytes())
                 .expect("Failed to write to stdin");

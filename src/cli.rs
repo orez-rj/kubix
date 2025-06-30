@@ -29,6 +29,15 @@ pub enum ConfigCommands {
         script: String,
     },
     
+    /// Add or update an interpreter path for a file extension
+    #[command(name = "add-interpreter")]
+    AddInterpreter {
+        /// File extension (e.g., "py", "js", "rb")
+        extension: String,
+        /// Full path to the interpreter (e.g., "/opt/app/venv/bin/python")
+        interpreter_path: String,
+    },
+    
     /// Remove a command nickname
     #[command(name = "remove-command")]
     RemoveCommand {
@@ -41,6 +50,13 @@ pub enum ConfigCommands {
     RemoveScript {
         /// Nickname of the script to remove
         nickname: String,
+    },
+    
+    /// Remove a custom interpreter
+    #[command(name = "remove-interpreter")]
+    RemoveInterpreter {
+        /// File extension to remove custom interpreter for
+        extension: String,
     },
     
     /// List current configuration (default action)

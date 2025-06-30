@@ -37,6 +37,15 @@ pub struct ScriptDisplay {
     pub script: String,
 }
 
+/// Represents an interpreter for table display
+#[derive(Tabled)]
+pub struct InterpreterDisplay {
+    #[tabled(rename = "Extension")]
+    pub extension: String,
+    #[tabled(rename = "Interpreter Path")]
+    pub interpreter: String,
+}
+
 /// Represents a context for table display
 #[derive(Tabled)]
 pub struct ContextDisplay {
@@ -162,7 +171,7 @@ pub fn print_commands_table(commands: &std::collections::HashMap<String, String>
     style_table(&mut table);
     
     let header = "⚡ Commands:".yellow().bold().to_string();
-    print_lines(&[&header, &table.to_string()]);
+    print_lines(&["", &header, &table.to_string()]);
 }
 
 /// Print scripts in a beautiful table format
@@ -185,7 +194,30 @@ pub fn print_scripts_table(scripts: &std::collections::HashMap<String, String>) 
     style_table(&mut table);
     
     let header = "📜 Scripts:".yellow().bold().to_string();
-    print_lines(&[&header, &table.to_string()]);
+    print_lines(&["", &header, &table.to_string()]);
+}
+
+/// Print interpreters in a beautiful table format
+pub fn print_interpreters_table(interpreters: &std::collections::HashMap<String, String>) {
+    if interpreters.is_empty() {
+        return;
+    }
+
+    let mut interpreter_displays: Vec<InterpreterDisplay> = interpreters
+        .iter()
+        .map(|(extension, interpreter)| InterpreterDisplay {
+            extension: extension.to_string(),
+            interpreter: interpreter.to_string(),
+        })
+        .collect();
+    
+    interpreter_displays.sort_by(|a, b| a.extension.cmp(&b.extension));
+    
+    let mut table = Table::new(&interpreter_displays);
+    style_table(&mut table);
+    
+    let header = "🔧 Custom Interpreters:".yellow().bold().to_string();
+    print_lines(&["", &header, &table.to_string()]);
 }
 
 /// Print contexts in a beautiful table format
