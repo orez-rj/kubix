@@ -120,18 +120,6 @@ kubix exec web-pod -s "./scripts/deploy.sh"
 kubix exec web-pod -s deploy
 ```
 
-### Smart Commands (Natural Language)
-
-```bash
-# Run commands using natural language (now with pattern matching)
-kubix smart "run command 'python manage.py shell' on pod that has web-internal in its name on testing context"
-
-kubix smart "bash to pod web"
-kubix smart "shell to pod that has api in its name"
-
-kubix smart "run script './deploy.sh' on pod web in prod context"
-```
-
 ## Examples
 
 ### Typical Workflows

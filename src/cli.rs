@@ -119,13 +119,7 @@ pub enum Commands {
         #[arg(long, short)]
         namespace: Option<String>,
     },
-    
-    /// Smart command - combine multiple operations
-    Smart {
-        /// Natural language command description
-        command: String,
-    },
-    
+
     /// Manage kubix configuration
     Config {
         #[command(subcommand)]

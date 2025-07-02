@@ -11,7 +11,6 @@ use commands::{
     handle_pods_command, 
     handle_exec_command, 
     handle_config_command,
-    process_smart_command,
     resolve_context_pattern,
     resolve_namespace_pattern
 };
@@ -52,9 +51,6 @@ fn handle_command(command: &Commands) {
                 resolved_context.as_deref(), 
                 resolved_namespace.as_deref()
             );
-        }
-        Commands::Smart { command } => {
-            process_smart_command(command);
         }
         Commands::Config { command } => {
             handle_config_command(command.as_ref());
