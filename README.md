@@ -14,10 +14,179 @@ A user-friendly CLI tool that wraps kubectl to provide enhanced functionality fo
 
 ## Installation
 
+### Quick Install (Recommended)
+
+The easiest way to install Kubix is using our installation script:
+
 ```bash
-cargo build --release
-# The binary will be available at target/release/kubix
+# Install latest version to /usr/local/bin (requires sudo)
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash
+
+# Or using wget
+wget -qO- https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash
 ```
+
+### Installation Options
+
+The installation script supports various options for different use cases:
+
+```bash
+# Install specific version
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -v v0.1.0
+
+# Install to user directory (no sudo required)
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -d ~/.local/bin
+
+# Install latest version to custom directory
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -d /opt/kubix/bin
+
+# Force reinstall/upgrade
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --force
+
+# View all options
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --help
+```
+
+### Environment Variables
+
+You can configure default installation behavior using environment variables:
+
+```bash
+# Set default installation directory
+export KUBIX_INSTALL_DIR="$HOME/.local/bin"
+
+# Set default version
+export KUBIX_VERSION="v0.1.0"
+
+# Then install with defaults
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash
+```
+
+### Manual Installation
+
+If you prefer to install manually or need more control:
+
+1. **Download the binary for your platform** from the [releases page](https://github.com/orezra/kubix/releases/latest):
+   - **Linux (x86_64-gnu)**: `kubix-Linux-x86_64-gnu.tar.gz`
+   - **Linux (x86_64-musl)**: `kubix-Linux-x86_64-musl.tar.gz` (statically linked, more portable)
+   - **Windows (x86_64)**: `kubix-Windows-x86_64.zip`
+   - **macOS (Intel)**: `kubix-Darwin-x86_64.tar.gz`
+   - **macOS (Apple Silicon)**: `kubix-Darwin-arm64.tar.gz`
+
+2. **Extract and install**:
+   ```bash
+   # Linux/macOS
+   tar -xzf kubix-*.tar.gz
+   chmod +x kubix
+   sudo mv kubix /usr/local/bin/
+   
+   # Or install to user directory (no sudo)
+   mkdir -p ~/.local/bin
+   mv kubix ~/.local/bin/
+   export PATH="$HOME/.local/bin:$PATH"  # Add to your shell profile
+   ```
+
+   ```powershell
+   # Windows (PowerShell)
+   Expand-Archive kubix-Windows-x86_64.zip
+   # Move kubix.exe to a directory in your PATH
+   ```
+
+3. **Verify installation**:
+   ```bash
+   kubix --help
+   ```
+
+### Building from Source
+
+For development or if you prefer to build from source:
+
+```bash
+# Clone the repository
+git clone https://github.com/orezra/kubix.git
+cd kubix
+
+# Build release binary
+cargo build --release
+
+# Install to PATH
+sudo cp target/release/kubix /usr/local/bin/
+# Or to user directory
+cp target/release/kubix ~/.local/bin/
+```
+
+### Installation Directories
+
+Choose the installation directory based on your needs:
+
+| Directory | Scope | Sudo Required | Notes |
+|-----------|-------|---------------|--------|
+| `/usr/local/bin` | System-wide | ✅ Yes | Default, available to all users |
+| `~/.local/bin` | User-only | ❌ No | Add to PATH: `export PATH="$HOME/.local/bin:$PATH"` |
+| `/opt/kubix/bin` | System-wide | ✅ Yes | Custom system location |
+| `~/bin` | User-only | ❌ No | Traditional user binary directory |
+
+### Updating Kubix
+
+To update to the latest version:
+
+```bash
+# Using the install script with force flag
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --force
+
+# Or specify a version
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -v v0.2.0 --force
+```
+
+## Uninstalling Kubix
+
+### Quick Uninstall
+
+The easiest way to uninstall Kubix is using the same installation script:
+
+```bash
+# Uninstall from default location (/usr/local/bin)
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --uninstall
+
+# Uninstall from custom directory
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --uninstall -d ~/.local/bin
+
+# Force uninstall (no confirmation prompts)
+curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --uninstall --force
+```
+
+### What Gets Removed
+
+The uninstall process will:
+
+1. **Remove the binary** from the specified directory
+2. **Verify removal** and check for remaining installations
+3. **Optionally remove configuration files** (asks for confirmation):
+   - Linux: `~/.config/kubix/`
+   - macOS: `~/Library/Application Support/kubix/`
+   - Windows: `%APPDATA%\kubix\`
+
+### Manual Uninstall
+
+If you prefer to uninstall manually:
+
+```bash
+# Remove the binary
+sudo rm /usr/local/bin/kubix
+# Or from user directory
+rm ~/.local/bin/kubix
+
+# Remove configuration (optional)
+rm -rf ~/.config/kubix  # Linux
+rm -rf ~/Library/Application\ Support/kubix  # macOS
+```
+
+### Multiple Installations
+
+If you have multiple installations of Kubix in different directories, the uninstall script will:
+- Remove the binary from the specified directory
+- Warn you if other installations are found in your PATH
+- Allow you to remove each installation separately
 
 ## Usage
 

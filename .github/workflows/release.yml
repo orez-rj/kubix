@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: Release - ${{ matrix.platform.release_for }}
+    strategy:
+      matrix:
+        platform:
+          - release_for: Linux-x86_64-gnu
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            bin: kubix
+            name: kubix-Linux-x86_64-gnu.tar.gz
+            command: build
+
+          - release_for: Linux-x86_64-musl
+            os: ubuntu-20.04
+            target: x86_64-unknown-linux-musl
+            bin: kubix
+            name: kubix-Linux-x86_64-musl.tar.gz
+            command: build
+
+          - release_for: Windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: kubix.exe
+            name: kubix-Windows-x86_64.zip
+            command: build
+
+          - release_for: macOS-x86_64
+            os: macOS-latest
+            target: x86_64-apple-darwin
+            bin: kubix
+            name: kubix-Darwin-x86_64.tar.gz
+            command: build
+
+          - release_for: macOS-arm64
+            os: macOS-latest
+            target: aarch64-apple-darwin
+            bin: kubix
+            name: kubix-Darwin-arm64.tar.gz
+            command: build
+
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v0
+        with:
+          command: ${{ matrix.platform.command }}
+          target: ${{ matrix.platform.target }}
+          args: "--locked --release"
+          strip: true
+
+      - name: Install musl-tools on Linux
+        run: sudo apt-get update --yes && sudo apt-get install --yes musl-tools
+        if: contains(matrix.platform.target, 'musl')
+
+      - name: Package as archive
+        shell: bash
+        run: |
+          cd target/${{ matrix.platform.target }}/release
+          if [[ "${{ matrix.platform.os }}" == "windows-latest" ]]; then
+            7z a ../../../${{ matrix.platform.name }} ${{ matrix.platform.bin }}
+          else
+            tar czvf ../../../${{ matrix.platform.name }} ${{ matrix.platform.bin }}
+          fi
+          cd -
+
+      - name: Publish release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform.name }}
+          path: ${{ matrix.platform.name }}
+
+  github_release:
+    name: Create GitHub Release
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "//;s/"//')
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Kubix ${{ steps.version.outputs.version }}
+          body: |
+            ## Kubix ${{ steps.version.outputs.version }}
+            
+            A smart kubectl wrapper that provides enhanced functionality for managing Kubernetes clusters.
+            
+            ### Installation
+            
+            Download the appropriate binary for your platform:
+            
+            - **Linux (x86_64-gnu)**: `kubix-Linux-x86_64-gnu.tar.gz`
+            - **Linux (x86_64-musl)**: `kubix-Linux-x86_64-musl.tar.gz` (statically linked)
+            - **Windows (x86_64)**: `kubix-Windows-x86_64.zip`
+            - **macOS (Intel)**: `kubix-Darwin-x86_64.tar.gz`
+            - **macOS (Apple Silicon)**: `kubix-Darwin-arm64.tar.gz`
+            
+            ### Quick Install
+            ```bash
+            # Extract the binary (Linux/macOS)
+            tar -xzf kubix-*.tar.gz
+            
+            # Make it executable and move to PATH
+            chmod +x kubix
+            sudo mv kubix /usr/local/bin/
+            
+            # Verify installation
+            kubix --help
+            ```
+            
+            For more detailed installation instructions and usage examples, see the [README](https://github.com/${{ github.repository }}/blob/main/README.md).
+          files: |
+            artifacts/**/*
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
