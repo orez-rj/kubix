@@ -2,143 +2,135 @@ name: Release
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch: # Allow manual triggering
+    tags:
+      - 'v*'          # build & release only when pushing version tags like v1.2.3
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release:
-    name: Release - ${{ matrix.platform.release_for }}
+  build:
+    name: Build - ${{ matrix.platform.release_for }}
+    concurrency:
+      group: release-${{ github.ref }}-${{ matrix.platform.target }}
+      cancel-in-progress: true
     strategy:
+      fail-fast: false
       matrix:
-        platform:
+        include:
           - release_for: Linux-x86_64-gnu
             os: ubuntu-20.04
             target: x86_64-unknown-linux-gnu
             bin: kubix
-            name: kubix-Linux-x86_64-gnu.tar.gz
-            command: build
+            archive_name: kubix-Linux-x86_64-gnu.tar.gz
+            use_cross: true
 
           - release_for: Linux-x86_64-musl
             os: ubuntu-20.04
             target: x86_64-unknown-linux-musl
             bin: kubix
-            name: kubix-Linux-x86_64-musl.tar.gz
-            command: build
+            archive_name: kubix-Linux-x86_64-musl.tar.gz
+            use_cross: true
 
           - release_for: Windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
             bin: kubix.exe
-            name: kubix-Windows-x86_64.zip
-            command: build
+            archive_name: kubix-Windows-x86_64.zip
+            use_cross: false
 
           - release_for: macOS-x86_64
             os: macOS-latest
             target: x86_64-apple-darwin
             bin: kubix
-            name: kubix-Darwin-x86_64.tar.gz
-            command: build
+            archive_name: kubix-Darwin-x86_64.tar.gz
+            use_cross: false
 
           - release_for: macOS-arm64
             os: macOS-latest
             target: aarch64-apple-darwin
             bin: kubix
-            name: kubix-Darwin-arm64.tar.gz
-            command: build
+            archive_name: kubix-Darwin-arm64.tar.gz
+            use_cross: false
 
     runs-on: ${{ matrix.platform.os }}
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v0
         with:
-          command: ${{ matrix.platform.command }}
+          command: build
           target: ${{ matrix.platform.target }}
           args: "--locked --release"
           strip: true
+          use-cross: ${{ matrix.platform.use_cross }}
+          cache: true
+          cache-key: ${{ matrix.platform.target }}
 
-      - name: Install musl-tools on Linux
-        run: sudo apt-get update --yes && sudo apt-get install --yes musl-tools
-        if: contains(matrix.platform.target, 'musl')
+      - name: Sanity check binary
+        run: |
+          target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }} --version
+        shell: bash
 
-      - name: Package as archive
+      - name: Package binary & generate checksum
         shell: bash
         run: |
           cd target/${{ matrix.platform.target }}/release
+          ARCHIVE=../../../${{ matrix.platform.archive_name }}
           if [[ "${{ matrix.platform.os }}" == "windows-latest" ]]; then
-            7z a ../../../${{ matrix.platform.name }} ${{ matrix.platform.bin }}
+            7z a "$ARCHIVE" "${{ matrix.platform.bin }}"
           else
-            tar czvf ../../../${{ matrix.platform.name }} ${{ matrix.platform.bin }}
+            tar -czvf "$ARCHIVE" "${{ matrix.platform.bin }}"
           fi
           cd -
+          shasum -a 256 "$ARCHIVE" > "$ARCHIVE".sha256
 
-      - name: Publish release artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.platform.name }}
-          path: ${{ matrix.platform.name }}
+          name: ${{ matrix.platform.archive_name }}
+          path: |
+            ${{ matrix.platform.archive_name }}
+            ${{ matrix.platform.archive_name }}.sha256
+          if-no-files-found: error
+          retention-days: 14
 
   github_release:
     name: Create GitHub Release
-    needs: release
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get version from Cargo.toml
-        id: version
-        run: |
-          VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "//;s/"//')
-          echo "version=v$VERSION" >> $GITHUB_OUTPUT
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
+      - name: Extract version from tag
+        id: vars
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: Kubix ${{ steps.version.outputs.version }}
+          tag_name: ${{ steps.vars.outputs.version }}
+          name: Kubix ${{ steps.vars.outputs.version }}
+          generate_release_notes: true
           body: |
-            ## Kubix ${{ steps.version.outputs.version }}
-            
-            A smart kubectl wrapper that provides enhanced functionality for managing Kubernetes clusters.
-            
-            ### Installation
-            
-            Download the appropriate binary for your platform:
-            
-            - **Linux (x86_64-gnu)**: `kubix-Linux-x86_64-gnu.tar.gz`
-            - **Linux (x86_64-musl)**: `kubix-Linux-x86_64-musl.tar.gz` (statically linked)
-            - **Windows (x86_64)**: `kubix-Windows-x86_64.zip`
-            - **macOS (Intel)**: `kubix-Darwin-x86_64.tar.gz`
-            - **macOS (Apple Silicon)**: `kubix-Darwin-arm64.tar.gz`
-            
-            ### Quick Install
+            ## Kubix ${{ steps.vars.outputs.version }}
+
+            Smart kubectl wrapper with extra super‑powers.
+
+            Download, `tar -xzf` / `unzip`, move the binary to your `$PATH`, and run:
+
             ```bash
-            # Extract the binary (Linux/macOS)
-            tar -xzf kubix-*.tar.gz
-            
-            # Make it executable and move to PATH
-            chmod +x kubix
-            sudo mv kubix /usr/local/bin/
-            
-            # Verify installation
             kubix --help
             ```
-            
-            For more detailed installation instructions and usage examples, see the [README](https://github.com/${{ github.repository }}/blob/main/README.md).
           files: |
-            artifacts/**/*
+            artifacts/**/*.{tar.gz,zip,sha256}
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
