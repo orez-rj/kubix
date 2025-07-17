@@ -10,7 +10,8 @@ use commands::{
     handle_ctx_command, 
     handle_pods_command, 
     handle_exec_command, 
-    handle_config_command
+    handle_config_command,
+    handle_logs_command
 };
 
 fn main() {
@@ -42,6 +43,28 @@ fn handle_command(command: &Commands) {
                 script.as_deref(), 
                 context.as_deref(), 
                 namespace.as_deref()
+            );
+        }
+        Commands::Log { pod, context, namespace, follow, tail, previous, container } => {
+            handle_logs_command(
+                pod,
+                context.as_deref(),
+                namespace.as_deref(),
+                *follow,
+                *tail,
+                *previous,
+                container.as_deref()
+            );
+        }
+        Commands::Logs { pod, context, namespace, follow, tail, previous, container } => {
+            handle_logs_command(
+                pod,
+                context.as_deref(),
+                namespace.as_deref(),
+                *follow,
+                *tail,
+                *previous,
+                container.as_deref()
             );
         }
         Commands::Config { command } => {

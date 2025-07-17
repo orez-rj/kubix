@@ -356,6 +356,11 @@ pub fn print_line(message: &str) {
     println!("{}", message);
 }
 
+/// Centralized print function
+pub fn print(message: &str) {
+    print!("{}", message);
+}
+
 /// Print multiple lines efficiently in a single call
 pub fn print_lines(lines: &[&str]) {
     if lines.is_empty() {

@@ -31,7 +31,7 @@ pub fn select_from_matches<T: Clone + std::fmt::Display>(
 
 /// Prompt user to choose from multiple options with retry logic
 fn prompt_user_choice(max_options: usize, resource_type: &str) -> Option<usize> {
-    print!("\nSelect {} (1-{}, or 'q' to quit): ", resource_type, max_options);
+    display::print(&format!("\nSelect {} (1-{}, or 'q' to quit): ", resource_type, max_options));
     io::stdout().flush().unwrap();
     
     let mut input = String::new();
@@ -60,7 +60,7 @@ fn prompt_user_choice(max_options: usize, resource_type: &str) -> Option<usize> 
 
 /// Prompt user for yes/no confirmation
 pub fn prompt_for_confirmation(message: &str) -> bool {
-    print!("❓ {} [y/N]: ", message);
+    display::print(&format!("❓ {} [y/N]: ", message));
     io::stdout().flush().unwrap();
     
     let mut input = String::new();
