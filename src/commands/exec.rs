@@ -1,5 +1,5 @@
 use crate::{kubectl, display};
-use crate::commands::{pods, config};
+use crate::commands::{pods, config, resolve_context_pattern, resolve_namespace_pattern};
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -10,9 +10,13 @@ pub fn handle_exec_command(
     pod_pattern: &str, 
     command: Option<&str>,
     script: Option<&str>, 
-    context: Option<&str>, 
-    namespace: Option<&str>
+    context_pattern: Option<&str>, 
+    namespace_pattern: Option<&str>
 ) {
+    // Resolve context and namespace patterns
+    let resolved_context = context_pattern.and_then(|pattern| resolve_context_pattern(pattern));
+    let resolved_namespace = namespace_pattern.and_then(|pattern| resolve_namespace_pattern(pattern, resolved_context.as_deref()));
+    
     // Load configuration for command/script resolution
     let config = config::KubixConfig::load();
     
@@ -20,16 +24,16 @@ pub fn handle_exec_command(
         (Some(cmd), None) => {
             // Execute a command
             let resolved_command = config.resolve_command(cmd);
-            run_command_on_pod(pod_pattern, &resolved_command, context, namespace);
+            run_command_on_pod(pod_pattern, &resolved_command, resolved_context.as_deref(), resolved_namespace.as_deref());
         }
         (None, Some(script_input)) => {
             // Execute a script
             let resolved_script = config.resolve_script(script_input);
-            exec_script_on_pod(pod_pattern, &resolved_script, &config, context, namespace);
+            exec_script_on_pod(pod_pattern, &resolved_script, &config, resolved_context.as_deref(), resolved_namespace.as_deref());
         }
         (None, None) => {
             // Default to bash
-            bash_to_pod(pod_pattern, context, namespace);
+            bash_to_pod(pod_pattern, resolved_context.as_deref(), resolved_namespace.as_deref());
         }
         (Some(_), Some(_)) => {
             // This should be prevented by clap's argument group, but handle it gracefully
