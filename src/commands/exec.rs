@@ -115,7 +115,7 @@ pub fn exec_script_on_pod(
 ) {
     if let Some(pod_name) = pods::select_pod(pod_pattern, context, namespace) {
         display::print_working(&format!("Executing script '{}' on pod: {}", script_path, pod_name));
-        
+
         // Read the script content
         let script_content = fs::read_to_string(script_path)
             .unwrap_or_else(|_| {
@@ -155,7 +155,13 @@ pub fn exec_script_on_pod(
         cmd.stdin(Stdio::piped());
         let mut child = cmd.spawn()
             .expect("Failed to spawn kubectl process");
-        
+
+        // Wait before executing script if configured
+        if config.settings.script_delay_seconds > 0 {
+            display::print_info(&format!("Waiting {} seconds for pod to be ready...", config.settings.script_delay_seconds));
+            std::thread::sleep(std::time::Duration::from_secs(config.settings.script_delay_seconds));
+        }
+
         // Send script content to the process
         if let Some(stdin) = child.stdin.as_mut() {
             stdin.write_all(script_content.as_bytes())
