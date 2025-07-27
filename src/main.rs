@@ -45,7 +45,7 @@ fn handle_command(command: &Commands) {
                 namespace.as_deref()
             );
         }
-        Commands::Log { pod, context, namespace, follow, tail, previous, container } => {
+        Commands::Log { pod, context, namespace, follow, tail, previous, container, grep, exclude } => {
             handle_logs_command(
                 pod,
                 context.as_deref(),
@@ -53,10 +53,12 @@ fn handle_command(command: &Commands) {
                 *follow,
                 *tail,
                 *previous,
-                container.as_deref()
+                container.as_deref(),
+                grep.as_deref(),
+                exclude.as_deref()
             );
         }
-        Commands::Logs { pod, context, namespace, follow, tail, previous, container } => {
+        Commands::Logs { pod, context, namespace, follow, tail, previous, container, grep, exclude } => {
             handle_logs_command(
                 pod,
                 context.as_deref(),
@@ -64,7 +66,9 @@ fn handle_command(command: &Commands) {
                 *follow,
                 *tail,
                 *previous,
-                container.as_deref()
+                container.as_deref(),
+                grep.as_deref(),
+                exclude.as_deref()
             );
         }
         Commands::Config { command } => {

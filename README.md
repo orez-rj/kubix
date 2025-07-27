@@ -297,7 +297,7 @@ kubix exec web -c shell --context prod --namespace frontend
 
 ### Pod Logs
 
-View and follow pod logs with advanced options:
+View and follow pod logs with advanced options and built-in filtering:
 
 ```bash
 # View logs from a pod
@@ -322,6 +322,63 @@ kubix logs api-pod -c app
 
 # Combine options with context/namespace patterns
 kubix logs web -f -t 100 --context prod --namespace frontend
+```
+
+#### Built-in Log Filtering 🔍
+
+Kubix includes powerful built-in filtering capabilities using regex patterns, eliminating the need for external piping:
+
+```bash
+# Filter logs to show only ERROR messages
+kubix logs web-pod --grep "ERROR"
+
+# Filter for INFO logs but exclude debug messages
+kubix logs web-pod --grep "INFO" --exclude "debug"
+
+# Exclude all WARNING messages
+kubix logs web-pod --exclude "WARNING"
+
+# Complex regex filtering
+kubix logs web-pod --grep "log_level.*(ERROR|CRITICAL)"
+
+# Case-sensitive filtering
+kubix logs web-pod --grep "Error" --exclude "ErrorHandler"
+
+# Filter with other options
+kubix logs web-pod -f --tail 100 --grep "ERROR" -c nginx
+
+# Multiple exclusion patterns
+kubix logs web-pod --exclude "debug|trace|verbose"
+```
+
+**Why use built-in filtering instead of pipes?**
+- ✅ **No piping issues** - Works seamlessly with kubix's enhanced output
+- ✅ **Line numbering preserved** - Only filtered lines get numbered
+- ✅ **Visual feedback** - Shows active filters in the header
+- ✅ **Real-time filtering** - Works with follow mode (`-f`)
+- ✅ **Regex validation** - Catches invalid patterns with helpful errors
+
+**Filtering Logic:**
+1. **Exclude first**: If `--exclude` matches, line is hidden
+2. **Then grep**: If `--grep` is provided, line must match to be shown
+3. **Visual indicators**: Active filters are shown in the enhanced header
+
+Example with visual output:
+```
+════════════════════════════════════════════════════════════════════════════════
+📋 Logs for pod: web-server-abc123
+🏷️  Container: nginx
+🌐 Context: production  
+📦 Namespace: default
+🔍 Grep: ERROR|CRITICAL
+❌ Exclude: debug
+🔄 Mode: Following (live)
+💡 Tip: Press Ctrl+C to stop following
+════════════════════════════════════════════════════════════════════════════════
+
+   1 │ {"log_level": "ERROR", "message": "Database connection failed"}
+   2 │ {"log_level": "CRITICAL", "message": "Service unavailable"}
+   3 │ {"log_level": "ERROR", "message": "Invalid user credentials"}
 ```
 
 ### Configuration System
@@ -409,12 +466,18 @@ kubix exec web-pod -s deploy
    kubix exec api -c ps --context prod # Check processes in production
    ```
 
-4. **View and follow logs:**
+4. **View and filter logs:**
    ```bash
    kubix logs web-pod -f               # Follow logs in real time
    kubix logs api-pod -t 50            # Show last 50 lines
    kubix logs web -f --context prod    # Follow logs in production
    kubix logs api -c nginx -f          # Follow specific container logs
+   
+   # Built-in filtering - no more piping issues!
+   kubix logs web --grep "ERROR"       # Show only error messages
+   kubix logs api --exclude "debug"    # Hide debug messages
+   kubix logs web -f --grep "user.*login" --exclude "test"  # Complex filtering
+   kubix logs api -t 100 --grep "log_level.*(ERROR|WARN)"   # Regex patterns
    ```
 
 5. **Executing scripts from local machine on pod:**
@@ -446,8 +509,8 @@ kubix exec web-pod -s deploy
 | `kubix exec <pod>` | Open bash shell in pod | `kubix exec web` |
 | `kubix exec <pod> -c <cmd>` | Run command on pod | `kubix exec api -c shell` |
 | `kubix exec <pod> -s <script>` | Execute script on pod | `kubix exec web -s deploy` |
-| `kubix logs <pod>` | View pod logs | `kubix logs web -f -t 100` |
-| `kubix log <pod>` | Same as logs (alias) | `kubix log api -f` |
+| `kubix logs <pod>` | View pod logs with filtering | `kubix logs web -f -t 100 --grep "ERROR"` |
+| `kubix log <pod>` | Same as logs (alias) | `kubix log api -f --exclude "debug"` |
 | `kubix config` | Manage configuration | `kubix config add-command shell "python manage.py shell"` |
 
 ## Pattern Matching

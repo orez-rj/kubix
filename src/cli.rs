@@ -120,6 +120,12 @@ pub enum Commands {
         /// Container name (for multi-container pods)
         #[arg(long, short)]
         container: Option<String>,
+        /// Filter logs using regex pattern (include lines matching this pattern)
+        #[arg(long, short)]
+        grep: Option<String>,
+        /// Exclude lines matching this regex pattern (used with or without --grep)
+        #[arg(long, short)]
+        exclude: Option<String>,
     },
 
     /// View logs from a pod (alias for logs)
@@ -145,6 +151,12 @@ pub enum Commands {
         /// Container name (for multi-container pods)
         #[arg(long, short)]
         container: Option<String>,
+        /// Filter logs using regex pattern (include lines matching this pattern)
+        #[arg(long, short)]
+        grep: Option<String>,
+        /// Exclude lines matching this regex pattern (used with or without --grep)
+        #[arg(long, short)]
+        exclude: Option<String>,
     },
 
     /// Execute command or script on a pod (defaults to bash if no command/script specified)

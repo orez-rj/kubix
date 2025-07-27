@@ -10,3 +10,4 @@ serde = { version = "1.0", features = ["derive"] }
 ctrlc = "3.4"
 tabled = "0.15"
 owo-colors = "4.0"
+regex = "1.0"
