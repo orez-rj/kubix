@@ -57,10 +57,10 @@ The easiest way to install Kubix is using our installation script:
 
 ```bash
 # Install latest version to /usr/local/bin (requires sudo)
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash
 
 # Or using wget
-wget -qO- https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash
 ```
 
 ### Installation Options
@@ -69,19 +69,19 @@ The installation script supports various options for different use cases:
 
 ```bash
 # Install specific version
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -v v0.1.0
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- -v v0.1.0
 
 # Install to user directory (no sudo required)
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -d ~/.local/bin
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- -d ~/.local/bin
 
 # Install latest version to custom directory
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -d /opt/kubix/bin
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- -d /opt/kubix/bin
 
 # Force reinstall/upgrade
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --force
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --force
 
 # View all options
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --help
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --help
 ```
 
 ### Environment Variables
@@ -96,14 +96,14 @@ export KUBIX_INSTALL_DIR="$HOME/.local/bin"
 export KUBIX_VERSION="v0.1.0"
 
 # Then install with defaults
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash
 ```
 
 ### Manual Installation
 
 If you prefer to install manually or need more control:
 
-1. **Download the binary for your platform** from the [releases page](https://github.com/orezra/kubix/releases/latest):
+1. **Download the binary for your platform** from the [releases page](https://github.com/orez-rj/kubix/releases/latest):
    - **Linux (x86_64-gnu)**: `kubix-Linux-x86_64-gnu.tar.gz`
    - **Linux (x86_64-musl)**: `kubix-Linux-x86_64-musl.tar.gz` (statically linked, more portable)
    - **Windows (x86_64)**: `kubix-Windows-x86_64.zip`
@@ -140,7 +140,7 @@ For development or if you prefer to build from source:
 
 ```bash
 # Clone the repository
-git clone https://github.com/orezra/kubix.git
+git clone https://github.com/orez-rj/kubix.git
 cd kubix
 
 # Build release binary
@@ -169,10 +169,10 @@ To update to the latest version:
 
 ```bash
 # Using the install script with force flag
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --force
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --force
 
 # Or specify a version
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- -v v0.2.0 --force
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- -v v0.2.0 --force
 ```
 
 ## Uninstalling Kubix
@@ -183,13 +183,13 @@ The easiest way to uninstall Kubix is using the same installation script:
 
 ```bash
 # Uninstall from default location (/usr/local/bin)
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --uninstall
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --uninstall
 
 # Uninstall from custom directory
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --uninstall -d ~/.local/bin
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --uninstall -d ~/.local/bin
 
 # Force uninstall (no confirmation prompts)
-curl -sSfL https://raw.githubusercontent.com/orezra/kubix/main/install.sh | bash -s -- --uninstall --force
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --uninstall --force
 ```
 
 ### What Gets Removed
