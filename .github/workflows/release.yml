@@ -2,16 +2,65 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'          # build & release only when pushing version tags like v1.2.3
+    branches:
+      - main
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  check_version:
+    name: Check for version change
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.changed }}
+      new_version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need at least 2 commits to compare
+
+      - name: Check if version changed
+        id: check
+        run: |
+          # Get the version from current Cargo.toml
+          CURRENT_VERSION=$(grep '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          
+          # Get the version from previous commit
+          git checkout HEAD~1 -- Cargo.toml 2>/dev/null || echo "No previous Cargo.toml"
+          if [ -f Cargo.toml ]; then
+            PREVIOUS_VERSION=$(grep '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          else
+            PREVIOUS_VERSION=""
+          fi
+          
+          # Restore current Cargo.toml
+          git checkout HEAD -- Cargo.toml
+          
+          echo "Previous version: $PREVIOUS_VERSION"
+          echo "Current version: $CURRENT_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ] && [ -n "$CURRENT_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Version unchanged"
+          fi
+
+      - name: Extract version
+        id: extract
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          VERSION=$(grep '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: v$VERSION"
+
   build:
     name: Build - ${{ matrix.platform.release_for }}
+    needs: check_version
+    if: needs.check_version.outputs.version_changed == 'true'
     concurrency:
       group: release-${{ github.ref }}-${{ matrix.platform.target }}
       cancel-in-progress: true
@@ -100,26 +149,34 @@ jobs:
 
   github_release:
     name: Create GitHub Release
-    needs: build
+    needs: [check_version, build]
+    if: needs.check_version.outputs.version_changed == 'true'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ needs.check_version.outputs.new_version }}
+          git push origin ${{ needs.check_version.outputs.new_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Extract version from tag
-        id: vars
-        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ steps.vars.outputs.version }}
-          name: Kubix ${{ steps.vars.outputs.version }}
+          tag_name: ${{ needs.check_version.outputs.new_version }}
+          name: Kubix ${{ needs.check_version.outputs.new_version }}
           generate_release_notes: true
           body: |
-            ## Kubix ${{ steps.vars.outputs.version }}
+            ## Kubix ${{ needs.check_version.outputs.new_version }}
 
             Smart kubectl wrapper with extra super‑powers.
 
