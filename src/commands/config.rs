@@ -11,6 +11,23 @@ pub struct KubixConfig {
     pub scripts: HashMap<String, String>,
     #[serde(default = "default_interpreters")]
     pub interpreters: HashMap<String, String>,
+    #[serde(default = "default_settings")]
+    pub settings: Settings,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Settings {
+    /// Time to wait before executing scripts (in seconds)
+    #[serde(default = "default_script_delay")]
+    pub script_delay_seconds: u64,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            script_delay_seconds: default_script_delay(),
+        }
+    }
 }
 
 impl Default for KubixConfig {
@@ -19,6 +36,7 @@ impl Default for KubixConfig {
             commands: default_commands(),
             scripts: default_scripts(),
             interpreters: default_interpreters(),
+            settings: default_settings(),
         }
     }
 }
@@ -108,6 +126,7 @@ pub fn show_config() {
     display::print_commands_table(&config.commands);
     display::print_scripts_table(&config.scripts);
     display::print_interpreters_table(&config.interpreters);
+    display::print_settings_table(&config.settings);
     
     if config.commands.is_empty() && config.scripts.is_empty() && config.interpreters.is_empty() {
         display::print_info("No custom commands, scripts, or interpreters configured.\n");
@@ -127,8 +146,11 @@ pub fn show_config() {
     display::print_info("💡 Usage:");
     display::print_lines(&[
         "  • kubix exec <pod> -c <command>   # Use command nickname",
-        "  • kubix exec <pod> -s <script>    # Use script nickname or file with custom interpreter"
+        "  • kubix exec <pod> -s <script>    # Use script nickname or file with custom interpreter\n"
     ]);
+    
+    display::print_info("⚙️ Settings:");
+    display::print_line("  • Edit the config file directly to modify settings");
 }
 
 /// Add a command with confirmation if it already exists
@@ -284,4 +306,14 @@ fn default_interpreters() -> HashMap<String, String> {
     let mut interpreters = HashMap::new();
     interpreters.insert("py".to_string(), "/opt/app/venv/bin/python".to_string());
     interpreters
+}
+
+/// Default settings for the configuration
+fn default_settings() -> Settings {
+    Settings::default()
+}
+
+/// Default script delay in seconds
+fn default_script_delay() -> u64 {
+    10
 } 

@@ -96,7 +96,69 @@ pub enum Commands {
         #[arg(long, short)]
         namespace: Option<String>,
     },
-    
+
+    /// View logs from a pod
+    #[command(name = "logs")]
+    Logs {
+        /// Pod name or pattern to match
+        pod: String,
+        /// Context to use (optional)
+        #[arg(long, short = 'x')]
+        context: Option<String>,
+        /// Namespace (optional)
+        #[arg(long, short)]
+        namespace: Option<String>,
+        /// Follow log output
+        #[arg(long, short)]
+        follow: bool,
+        /// Number of lines to show from the end of the logs
+        #[arg(long, short)]
+        tail: Option<u32>,
+        /// Show logs from previous terminated container
+        #[arg(long, short)]
+        previous: bool,
+        /// Container name (for multi-container pods)
+        #[arg(long, short)]
+        container: Option<String>,
+        /// Filter logs using regex pattern (include lines matching this pattern)
+        #[arg(long, short)]
+        grep: Option<String>,
+        /// Exclude lines matching this regex pattern (used with or without --grep)
+        #[arg(long, short)]
+        exclude: Option<String>,
+    },
+
+    /// View logs from a pod (alias for logs)
+    #[command(name = "log")]
+    Log {
+        /// Pod name or pattern to match
+        pod: String,
+        /// Context to use (optional)
+        #[arg(long, short = 'x')]
+        context: Option<String>,
+        /// Namespace (optional)
+        #[arg(long, short)]
+        namespace: Option<String>,
+        /// Follow log output
+        #[arg(long, short)]
+        follow: bool,
+        /// Number of lines to show from the end of the logs
+        #[arg(long, short)]
+        tail: Option<u32>,
+        /// Show logs from previous terminated container
+        #[arg(long, short)]
+        previous: bool,
+        /// Container name (for multi-container pods)
+        #[arg(long, short)]
+        container: Option<String>,
+        /// Filter logs using regex pattern (include lines matching this pattern)
+        #[arg(long, short)]
+        grep: Option<String>,
+        /// Exclude lines matching this regex pattern (used with or without --grep)
+        #[arg(long, short)]
+        exclude: Option<String>,
+    },
+
     /// Execute command or script on a pod (defaults to bash if no command/script specified)
     #[command(group(
         ArgGroup::new("exec_type")

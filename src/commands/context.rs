@@ -11,6 +11,7 @@ pub fn handle_ctx_command(name_pattern: Option<&str>) {
 /// Resolve a context pattern to an exact context name
 /// Returns None if user cancels, exits process if no matches found
 pub fn resolve_context_pattern(pattern: &str) -> Option<String> {
+    display::print_working(&format!("Resolving context with pattern {}...", pattern));
     // Get all contexts
     let contexts = match get_all_contexts() {
         Ok(contexts) => contexts,
@@ -25,13 +26,18 @@ pub fn resolve_context_pattern(pattern: &str) -> Option<String> {
         .filter(|context| context.contains(pattern))
         .collect();
     
-    utils::select_from_matches(matches, pattern, "context")
+    let resolved_context = utils::select_from_matches(matches, pattern, "context");
+    if let Some(context) = &resolved_context {
+        display::print_working(&format!("Using context: {}", context));
+    }
+    resolved_context
 }
 
 /// List all available kubectl contexts and mark the current one
 pub fn list_contexts_with_current() {
     let current_context = get_current_context();
     
+    display::print_working("Listing contexts...");
     match kubectl::execute_kubectl(&["config", "get-contexts", "-o", "name"]) {
         Ok(output) => {
             display::print_contexts_table(&output, current_context.as_deref());
@@ -52,9 +58,7 @@ pub fn switch_to_context_by_pattern(pattern: &str) {
 }
 
 /// Switch to a specific kubectl context
-pub fn use_context(name: &str) {
-    display::print_info(&format!("🔄 Switching to context: {}", name));
-    
+pub fn use_context(name: &str) {    
     match kubectl::execute_kubectl(&["config", "use-context", name]) {
         Ok(_) => {
             display::print_success(&format!("Successfully switched to context: {}", name));

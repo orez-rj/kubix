@@ -3,6 +3,7 @@ use crate::{display, utils, kubectl};
 /// Resolve a namespace pattern to an exact namespace name
 /// Returns None if user cancels, exits process if no matches found
 pub fn resolve_namespace_pattern(pattern: &str, context: Option<&str>) -> Option<String> {
+    display::print_working(&format!("Resolving namespace with pattern {}...", pattern));
     // Get all namespaces
     let namespaces = match get_all_namespaces(context) {
         Ok(namespaces) => namespaces,
@@ -17,7 +18,11 @@ pub fn resolve_namespace_pattern(pattern: &str, context: Option<&str>) -> Option
         .filter(|namespace| namespace.contains(pattern))
         .collect();
     
-    utils::select_from_matches(matches, pattern, "namespace")
+    let resolved_namespace = utils::select_from_matches(matches, pattern, "namespace");
+    if let Some(namespace) = &resolved_namespace {
+        display::print_working(&format!("Using namespace: {}", namespace));
+    }
+    resolved_namespace
 }
 
 /// Get all available namespaces as a vector

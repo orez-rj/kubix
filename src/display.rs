@@ -46,6 +46,17 @@ pub struct InterpreterDisplay {
     pub interpreter: String,
 }
 
+/// Represents settings for table display
+#[derive(Tabled)]
+pub struct SettingsDisplay {
+    #[tabled(rename = "Setting")]
+    pub setting: String,
+    #[tabled(rename = "Value")]
+    pub value: String,
+    #[tabled(rename = "Description")]
+    pub description: String,
+}
+
 /// Represents a context for table display
 #[derive(Tabled)]
 pub struct ContextDisplay {
@@ -287,6 +298,23 @@ pub fn print_selection_table<T: Display>(items: &[T], resource_type: &str, detai
     print_lines(&[&header, &table.to_string()]);
 }
 
+/// Print settings in a beautiful table format
+pub fn print_settings_table(settings: &crate::commands::config::Settings) {
+    let settings_displays = vec![
+        SettingsDisplay {
+            setting: "script_delay_seconds".to_string(),
+            value: settings.script_delay_seconds.to_string(),
+            description: "Time to wait before executing scripts (seconds)".to_string(),
+        },
+    ];
+    
+    let mut table = Table::new(&settings_displays);
+    style_table(&mut table);
+    
+    let header = "⚙️ Settings:".yellow().bold().to_string();
+    print_lines(&["", &header, &table.to_string()]);
+}
+
 /// Print a simple info message with styling
 pub fn print_info(message: &str) {
     print_line(&format!("{} {}", "ℹ️".cyan(), message.bright_blue()));
@@ -326,6 +354,11 @@ pub fn eprint_line(message: &str) {
 /// Centralized print line function
 pub fn print_line(message: &str) {
     println!("{}", message);
+}
+
+/// Centralized print function
+pub fn print(message: &str) {
+    print!("{}", message);
 }
 
 /// Print multiple lines efficiently in a single call
