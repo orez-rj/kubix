@@ -135,7 +135,7 @@ detect_platform() {
 # Version helpers
 # ────────────────────────────────────────────────────────────────────────────────
 get_latest_version() {
-  info "📡  Fetching latest version…"
+  info "📡  Fetching latest version…" >&2
   local api_url="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest"
   local latest_version
   latest_version=$(fetch "$api_url" | grep '"tag_name"' | sed -E 's/.*"tag_name": "([^"]+)".*/\1/') || true
@@ -158,12 +158,24 @@ uninstall_kubix() {
   local bin_name="kubix"; [[ "$(uname -s)" =~ CYGWIN|MINGW|MSYS ]] && bin_name="kubix.exe"
   local target_path="${INSTALL_DIR}/${bin_name}"
 
+  # Check if we're running interactively
+  local interactive=false
+  if [[ -t 0 && -t 1 ]]; then
+    interactive=true
+  fi
+
   if [[ ! -f "$target_path" ]]; then
     warn "Kubix not found at $target_path"
     if command -v kubix >/dev/null 2>&1; then
       target_path="$(command -v kubix)"
-      read -r -p "Remove $target_path? (y/N): "
-      [[ ! $REPLY =~ ^[Yy]$ ]] && { info "Cancelled"; exit 0; }
+      if [[ "$interactive" == true ]]; then
+        read -r -p "Remove $target_path? (y/N): "
+        [[ ! $REPLY =~ ^[Yy]$ ]] && { info "Cancelled"; exit 0; }
+      elif [[ "$FORCE" != true ]]; then
+        err "Non-interactive mode: use --force to confirm removal of $target_path"
+      else
+        info "Force removing $target_path (non-interactive mode)"
+      fi
     else
       info "Nothing to do."
       exit 0
@@ -171,8 +183,12 @@ uninstall_kubix() {
   fi
 
   if [[ "$FORCE" != true ]]; then
-    read -r -p "Confirm removal of $target_path? (y/N): "
-    [[ ! $REPLY =~ ^[Yy]$ ]] && { info "Cancelled"; exit 0; }
+    if [[ "$interactive" == true ]]; then
+      read -r -p "Confirm removal of $target_path? (y/N): "
+      [[ ! $REPLY =~ ^[Yy]$ ]] && { info "Cancelled"; exit 0; }
+    else
+      err "Non-interactive mode: use --force to confirm removal of $target_path"
+    fi
   fi
 
   if ! rm "$target_path" 2>/dev/null; then

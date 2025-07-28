@@ -182,15 +182,20 @@ curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bas
 The easiest way to uninstall Kubix is using the same installation script:
 
 ```bash
-# Uninstall from default location (/usr/local/bin)
-curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --uninstall
-
-# Uninstall from custom directory
-curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --uninstall -d ~/.local/bin
-
-# Force uninstall (no confirmation prompts)
+# Non-interactive uninstall (piped from curl - requires --force)
 curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --uninstall --force
+
+# Non-interactive uninstall from custom directory
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh | bash -s -- --uninstall --force -d ~/.local/bin
+
+# Interactive uninstall (download first, then run)
+curl -sSfL https://raw.githubusercontent.com/orez-rj/kubix/main/install.sh -o uninstall.sh
+chmod +x uninstall.sh
+./uninstall.sh --uninstall                    # Will show confirmation prompts
+./uninstall.sh --uninstall -d ~/.local/bin    # With custom directory
 ```
+
+**Note**: When using `curl | bash` (piped execution), the script runs in non-interactive mode and cannot display confirmation prompts. You **must** use the `--force` flag. For interactive prompts, download the script first and run it directly.
 
 ### What Gets Removed
 
