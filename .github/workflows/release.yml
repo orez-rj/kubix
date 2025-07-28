@@ -69,13 +69,13 @@ jobs:
       matrix:
         platform:
           - release_for: Linux-x86_64-gnu
-            os: ubuntu-20.04
+            os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             bin: kubix
             archive_name: kubix-Linux-x86_64-gnu.tar.gz
 
           - release_for: Linux-x86_64-musl
-            os: ubuntu-20.04
+            os: ubuntu-latest
             target: x86_64-unknown-linux-musl
             bin: kubix
             archive_name: kubix-Linux-x86_64-musl.tar.gz
@@ -126,7 +126,12 @@ jobs:
             tar -czvf "../../../${{ matrix.platform.archive_name }}" "${{ matrix.platform.bin }}"
           fi
           cd ../../..
-          shasum -a 256 "${{ matrix.platform.archive_name }}" > "${{ matrix.platform.archive_name }}.sha256"
+          if [[ "${{ matrix.platform.os }}" == "windows-latest" ]]; then
+            # Use PowerShell to generate SHA256 hash in the same format as shasum
+            powershell -Command "(Get-FileHash '${{ matrix.platform.archive_name }}' -Algorithm SHA256).Hash.ToLower() + '  ${{ matrix.platform.archive_name }}'" > "${{ matrix.platform.archive_name }}.sha256"
+          else
+            shasum -a 256 "${{ matrix.platform.archive_name }}" > "${{ matrix.platform.archive_name }}.sha256"
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
