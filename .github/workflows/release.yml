@@ -182,7 +182,9 @@ jobs:
             kubix --help
             ```
           files: |
-            artifacts/**/*.{tar.gz,zip,sha256}
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            artifacts/**/*.sha256
           draft: false
           prerelease: false
         env:
